@@ -57,6 +57,58 @@ header p{color:var(--text-dim); margin:6px 0 0 0; font-size:0.92rem;}
 
 .wrap{max-width:1180px; margin:0 auto; padding:0 32px;}
 
+/* Errores de validación de entrada */
+.errores{
+  background:rgba(255,93,93,0.10);
+  border:1px solid var(--danger);
+  border-left:4px solid var(--danger);
+  border-radius:4px;
+  padding:14px 18px;
+  margin-top:22px;
+  color:var(--text);
+  font-size:0.9rem;
+}
+.errores ul{margin:8px 0 0 0; padding-left:20px;}
+.errores li{margin:3px 0; color:var(--text-dim);}
+
+/* Avisos de cálculo (no bloquean, informan) */
+.avisos-box{
+  background:rgba(245,166,35,0.07);
+  border:1px solid var(--amber-dim);
+  border-radius:4px;
+  padding:8px 18px 16px 18px;
+  margin-bottom:24px;
+}
+.avisos-box h3{margin-top:12px;}
+.aviso-grupo{margin-top:12px;}
+.aviso-grupo>strong{
+  display:block;
+  font-family:var(--mono);
+  font-size:0.78rem;
+  letter-spacing:1px;
+  color:var(--amber);
+  margin-bottom:4px;
+  text-transform:uppercase;
+}
+.step-aviso{align-items:flex-start;}
+.step-aviso .step-num{background:var(--amber); color:#1a1400;}
+.step-aviso>span:last-child{color:var(--text-dim); font-size:0.88rem; line-height:1.5;}
+
+/* Resultados desfasados respecto a las entradas actuales */
+.obsoleto-aviso{display:none;}
+.obsoleto{position:relative; opacity:0.5;}
+.obsoleto .obsoleto-aviso{
+  display:block;
+  background:rgba(245,166,35,0.14);
+  border:1px dashed var(--amber);
+  border-radius:4px;
+  padding:10px 14px;
+  margin-bottom:18px;
+  color:var(--amber);
+  font-size:0.86rem;
+  font-family:var(--mono);
+}
+
 .section{
   background:var(--bg-panel);
   border:1px solid var(--line);
@@ -234,15 +286,56 @@ tr.row-add td{padding-top:10px;}
 }
 .modal-close:hover{color:var(--amber);}
 
+/* La memoria de cálculo solo existe al imprimir */
+#informe{display:none;}
+
 @media print{
-  body{background:white !important; color:#111 !important;}
-  .no-print{display:none !important;}
-  .section{border:1px solid #999; background:white; break-inside:avoid;}
-  .section::before{background:#333; color:white;}
-  header{border-bottom:2px solid #333;}
-  a, .btn{display:none !important;}
-  #results{display:block !important;}
-  table{min-width:0;}
+  @page{size:A4 portrait; margin:14mm 12mm;}
+  body{background:white !important; color:#111 !important; padding:0 !important;}
+
+  /* Al imprimir se oculta SIEMPRE la interfaz y se imprime solo la memoria de
+     cálculo, tanto si se pulsa el botón como si se usa Ctrl+P directamente. */
+  body>header, body>.wrap, body>.modal-overlay{display:none !important;}
+  #informe{display:block !important;}
+
+  /* ---- Estilos de la memoria de cálculo ---- */
+  #informe{font-family:var(--sans); color:#111; font-size:8pt; line-height:1.38;}
+  .inf-cab{border-bottom:2.5pt solid #111; padding-bottom:6pt; margin-bottom:12pt;}
+  .inf-tit{font-size:15pt; font-weight:700; letter-spacing:-0.2pt;}
+  .inf-sub{font-size:11pt; font-weight:600; margin-top:3pt;}
+  .inf-meta{font-family:var(--mono); font-size:7.4pt; color:#555; margin-top:5pt;}
+  #informe h2{
+    font-size:9.6pt; font-weight:700; text-transform:uppercase; letter-spacing:0.6pt;
+    margin:14pt 0 5pt 0; padding-bottom:2.5pt; border-bottom:1pt solid #111;
+    break-after:avoid; page-break-after:avoid;
+  }
+  .inf-tabla{
+    width:100%; border-collapse:collapse; margin-bottom:5pt;
+    break-inside:auto; page-break-inside:auto;
+  }
+  /* El color y las mayúsculas se fuerzan porque el tema de pantalla pinta las
+     cabeceras de tabla en ámbar y en mayúsculas: en un documento impreso deben
+     ir en negro, y las mayúsculas convertían la η (rendimiento) en una letra
+     indistinguible de una H. */
+  .inf-tabla th, .inf-tabla td{
+    border:0.5pt solid #888; padding:2.6pt 4pt; text-align:left;
+    vertical-align:top; word-break:break-word;
+    color:#111 !important; text-transform:none !important; letter-spacing:0 !important;
+    font-family:var(--sans) !important;
+  }
+  .inf-tabla thead th{
+    background:#e4e4e4 !important; font-weight:700; font-size:7.2pt;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .inf-tabla thead{display:table-header-group;}  /* repite cabecera en cada página */
+  .inf-tabla tr{break-inside:avoid; page-break-inside:avoid;}
+  .inf-pares th{width:40%; background:#f2f2f2 !important; font-weight:600;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;}
+  .inf-nota{font-size:7.6pt; color:#444; margin:4pt 0 8pt 0; text-align:justify;}
+  .inf-avisos, .inf-refs{margin:0 0 8pt 0; padding-left:13pt;}
+  .inf-avisos li{margin-bottom:3.5pt; break-inside:avoid;}
+  .inf-refs li{margin-bottom:2.5pt; font-size:7.6pt; color:#333; break-inside:avoid;}
+  .inf-avisos li{border-left:2pt solid #b8860b; padding-left:5pt; list-style:none; margin-left:-8pt;}
 }
 @media (max-width:760px){
   .wrap{padding:0 14px;}
@@ -308,7 +401,29 @@ tr.row-add td{padding-top:10px;}
       <div class="field"><label>Caída de tensión máx circuitos (%) <button class="info-btn" onclick="showInfo('vdropMax')">?</button></label><input type="number" id="vdropMax" value="3" step="0.5"></div>
       <div class="field"><label>Margen de seguridad 24VDC (%) <button class="info-btn" onclick="showInfo('margen24')">?</button></label><input type="number" id="margen24" value="25"></div>
     </div>
+    <div class="grid4">
+      <div class="field"><label>Aislamiento del cable <button class="info-btn" onclick="showInfo('aislamiento')">?</button></label>
+        <select id="aislamiento" onchange="onAislamientoChange()">
+          <option value="XLPE" selected>Termoestable XLPE / EPR (90 °C)</option>
+          <option value="PVC">Termoplástico PVC (70 °C)</option>
+        </select>
+      </div>
+      <div class="field"><label>Margen de seguridad sobre Iz <button class="info-btn" onclick="showInfo('margenIz')">?</button></label>
+        <select id="margenIz">
+          <option value="0.94" selected>0,94 — margen conservador (recomendado)</option>
+          <option value="1">1,00 — Tabla 1 del REBT sin margen</option>
+        </select>
+      </div>
+      <div class="field"><label>Tipo de suministro <button class="info-btn" onclick="showInfo('tipoSuministro')">?</button></label>
+        <select id="tipoSuministro" onchange="actualizarLimiteVdrop()">
+          <option value="general" selected>Instalación receptora en BT (ΔU máx. 5% fuerza)</option>
+          <option value="trafo">Industrial con transformador propio en AT (ΔU máx. 6,5% fuerza)</option>
+        </select>
+      </div>
+      <div class="field"><label>Límite legal ΔU aplicable</label><input type="text" id="limiteVdropDisplay" value="5% (fuerza) / 3% (alumbrado)" disabled></div>
+    </div>
     <div class="note">La disipación natural se calcula según la superficie efectiva de intercambio de la envolvente (IEC 60890), coeficiente k=5,5 W/m²K para chapa pintada.</div>
+    <div class="note" id="notaAislamiento">La <strong>Tabla 1 de la ITC-BT-19</strong> está indexada por método de instalación, <strong>naturaleza del aislamiento</strong> y <strong>número de conductores con carga</strong>, y sus valores están dados <strong>a 40 °C</strong> de temperatura ambiente del aire. El número de conductores con carga se deduce de la alimentación de cada circuito: 3 en trifásico 400V y 2 en monofásico 230V. El aislamiento también fija la temperatura de servicio del conductor y, con ella, la resistividad usada en el cálculo de caída de tensión (PVC 70 °C → ρ=0,02132; XLPE 90 °C → ρ=0,02267, equivalente a γ≈44).</div>
 
     <h3>Criterios de dimensionado industrial</h3>
     <div class="grid2">
@@ -373,9 +488,9 @@ tr.row-add td{padding-top:10px;}
         </select>
       </div>
       <div class="field"><label>Material del conductor <button class="info-btn" onclick="showInfo('materialAcom')">?</button></label>
-        <select id="materialAcom">
-          <option value="cu">Cobre (γ=44)</option>
-          <option value="al">Aluminio (γ=27)</option>
+        <select id="materialAcom" onchange="actualizarVdropLGA()">
+          <option value="cu">Cobre</option>
+          <option value="al">Aluminio</option>
         </select>
       </div>
       <div class="field"><label>Sección mínima absoluta aplicada</label><input type="text" id="minAbsolutaDisplay" value="10 mm² (Cu, acometida)" disabled></div>
@@ -411,7 +526,7 @@ tr.row-add td{padding-top:10px;}
     <div class="actions no-print">
       <button class="btn small" onclick="addCircuito()">+ Añadir circuito</button>
     </div>
-    <div class="note">Tabla de intensidades admisibles con 9 métodos de instalación (A, A2, B1, B2, C, E, F, G, G2), cobre, cables libres de halógenos. Incluye factor de seguridad por la actualización normativa de 2025 <button class="info-btn no-print" onclick="showInfo('notaTabla2022')">?</button></div>
+    <div class="note">Intensidades admisibles tomadas de la <strong>Tabla 1 de la ITC-BT-19</strong> del REBT (RD 842/2002, texto consolidado del BOE), conductor de cobre, 8 métodos de instalación (A, A2, B, B2, C, E, F, G). La tabla se indexa por método + aislamiento + nº de conductores con carga, y está dada a 40 °C <button class="info-btn no-print" onclick="showInfo('notaTabla2022')">?</button></div>
   </div>
 
   <!-- SECCIÓN 4: ELEMENTOS 24VDC -->
@@ -469,9 +584,18 @@ tr.row-add td{padding-top:10px;}
     <div class="note">Se calcula la sección de cada tramo interior según la corriente real que circula por él (la Ib de diseño de cada circuito, no la Ib general completa) y la caída de tensión admisible.</div>
   </div>
 
+  <div id="errores" class="errores no-print" style="display:none;"></div>
+
   <div class="calc-bar no-print">
     <button class="btn primary" onclick="calcular()">CALCULAR CUADRO →</button>
+    <button class="btn" id="btnPDF" onclick="exportarPDF()" disabled title="Genera la memoria de cálculo para guardarla como PDF">⭳ EXPORTAR A PDF</button>
+    <button class="btn small" onclick="borrarEstadoGuardado()" title="Vacía los datos guardados en este navegador y vuelve al ejemplo inicial">Empezar de cero</button>
   </div>
+  <div class="field no-print" style="max-width:520px; margin-top:14px;">
+    <label>Referencia del cuadro / obra (aparece en la cabecera del PDF)</label>
+    <input type="text" id="refObra" placeholder="ej: Cuadro CS-03 — Línea de envasado, Planta Sagunto">
+  </div>
+  <div class="note no-print">Los datos que introduces se guardan automáticamente en este navegador, así que no se pierden al recargar la página. No se envían a ningún sitio. El PDF se genera con el diálogo de impresión del navegador: elige <strong>«Guardar como PDF»</strong> como destino.</div>
 
   <!-- SECCIÓN 06: CÁLCULO INDEPENDIENTE DE UN SOLO MOTOR -->
   <div class="section" data-num="06b">
@@ -509,6 +633,8 @@ tr.row-add td{padding-top:10px;}
         <label class="toggle-label"><input type="checkbox" id="mi_margen" checked><span>Margen arranque 125%</span></label>
       </div>
     </div>
+    <div class="note">Usa el mismo aislamiento, margen sobre Iz y criterio de sección mínima práctica que has fijado en la sección 01 del cuadro.</div>
+    <div id="mi_errores" class="errores no-print" style="display:none;"></div>
     <div class="actions no-print">
       <button class="btn primary" onclick="calcularMotorIndependiente()">CALCULAR ESTE MOTOR →</button>
     </div>
@@ -526,6 +652,9 @@ tr.row-add td{padding-top:10px;}
   <!-- RESULTADOS -->
   <div class="section" id="results" data-num="06">
     <h2>Resultados</h2>
+    <div class="obsoleto-aviso no-print">Has cambiado algún dato de entrada: estos resultados corresponden al cálculo anterior. Vuelve a pulsar CALCULAR CUADRO.</div>
+
+    <div id="avisosCalculo" class="avisos-box" style="display:none;"></div>
 
     <h3>Circuitos de potencia — sección de cable y protecciones</h3>
     <div class="table-scroll">
@@ -642,6 +771,10 @@ tr.row-add td{padding-top:10px;}
 
 </div>
 
+<!-- MEMORIA DE CÁLCULO PARA IMPRIMIR / GUARDAR COMO PDF.
+     Se rellena por JS al pulsar "Exportar a PDF" y solo es visible al imprimir. -->
+<div id="informe"><p class="inf-nota">No hay ningún cálculo todavía. Pulsa «CALCULAR CUADRO» y vuelve a imprimir para obtener la memoria de cálculo.</p></div>
+
 <!-- MODAL DE INFORMACIÓN -->
 <div class="modal-overlay no-print" id="modalOverlay" onclick="if(event.target===this)closeInfo()">
   <div class="modal-box">
@@ -656,14 +789,17 @@ tr.row-add td{padding-top:10px;}
 const INFO_TEXTS = {
   tAmb: ["Temperatura ambiente máxima", "Temperatura máxima esperada en la sala o nave donde está instalado el cuadro (no la temperatura interior del propio cuadro). Si no la conoces, usa 35°C para interiores industriales normales, o 40-45°C si el cuadro está cerca de una fuente de calor (hornos, motores grandes, exterior con sol directo)."],
   tInt: ["Temperatura interior máxima admisible", "Temperatura máxima que puede alcanzar el aire dentro del cuadro sin dañar los componentes más sensibles (variadores, fuente, PLC). Consulta la hoja de características del elemento más delicado. Si no la conoces, usa 45-50°C como valor típico para armarios con variadores y electrónica."],
-  vdropMax: ["Caída de tensión máxima (circuitos)", "Porcentaje máximo de tensión que se puede perder en el cable por su resistencia, respecto a la tensión nominal. El REBT admite hasta 3-5% en instalaciones interiores, pero en cuadros con variadores y automatismos conviene ser más restrictivo (1,5-3%) para evitar fallos de arranque o lecturas erróneas. Si no lo sabes, usa 3%."],
+  vdropMax: ["Caída de tensión máxima (circuitos)", "Porcentaje máximo de tensión que se puede perder en el cable por su resistencia, respecto a la tensión nominal. El apartado 2.2.2 de la ITC-BT-19 fija como máximo, entre el origen de la instalación interior y cualquier punto de utilización, el 3% para alumbrado y el 5% para los demás usos (4,5% y 6,5% si la instalación industrial se alimenta en alta tensión con transformador propio). En cuadros con variadores y automatismos conviene ser más restrictivo que el límite legal (1,5-3%) para evitar fallos de arranque o lecturas erróneas. Si no lo sabes, usa 3%. Ten en cuenta que el cálculo desprecia la reactancia del cable, aproximación admitida hasta unos 120 mm²; por encima de esa sección la calculadora te avisa."],
   margen24: ["Margen de seguridad 24VDC", "Porcentaje adicional que se suma al consumo real calculado de los elementos de 24VDC, para cubrir ampliaciones futuras y que la fuente no trabaje al límite de su capacidad de forma continua. Si no lo sabes, usa 20-30%."],
   montaje: ["Tipo de montaje del cuadro", "Un cuadro autoportante (de pie, libre por todos los lados) disipa mejor el calor porque intercambia por más caras. Un cuadro mural (atornillado a una pared) pierde la cara trasera como superficie de disipación. Si no lo sabes, elige mural si está fijado directamente a una pared."],
   cosf: ["Factor de potencia (cos φ)", "Indica qué proporción de la corriente consumida por el motor realiza trabajo útil. Aparece en la placa de características del motor. Si no lo sabes, usa 0,85 para motores estándar de tamaño medio (valores típicos: 0,80-0,90)."],
   eta: ["Rendimiento del motor (η)", "Relación entre la potencia mecánica entregada en el eje y la potencia eléctrica consumida. Aparece en la placa de características. Si no lo sabes, usa 88-92% para motores de tamaño medio (más alto cuanto mayor es la potencia)."],
-  metodo: ["Método de instalación del cableado", "Cuanto peor se refrigera el cable, menos corriente admite para la misma sección. De menor a mayor capacidad, de forma orientativa: A (tubo empotrado en pared aislante, el que peor refrigera) < A2 (multiconductor en tubo empotrado) < B1/B2 (tubo en montaje superficial u obra) < C (multiconductor directo sobre pared, desde 25mm²) < E (multiconductor al aire libre / bandeja perforada) < F (unipolares en contacto mutuo/trébol) < G (unipolares separados entre sí) < G2 (unipolares muy separados, máxima disipación, desde 25mm²). Si no lo sabes, usa E (bandeja/al aire), el más habitual en cuadros y bandejas portacables industriales. Los valores incorporan un factor de seguridad del 0,94 por la transición normativa a UNE-HD 60364-5-52:2022 (ver nota en la sección de circuitos)."],
-  notaTabla2022: ["Actualización de la tabla de intensidades (2025)", "Desde el 4 de abril de 2025 la ITC-BT-02 del REBT remite a la norma UNE-HD 60364-5-52:2022 (en vez de la edición de 2014) para la tabla simplificada de intensidades admisibles \"al aire\". Los cambios respecto a la tabla clásica (la misma que manejan la mayoría de apuntes y libros de texto, incluido el tuyo) son de hasta ±6% según fuentes del sector (Prysmian, COGITI). Mientras no se dispone de las cifras exactas 2022 celda a celda, esta calculadora aplica un factor de seguridad de 0,94 sobre la tabla clásica — el mismo método transitorio recomendado por Prysmian — para no conceder nunca más intensidad admisible de la legalmente permitida. Las tablas de instalación ENTERRADA (ITC-BT-07) no se han visto afectadas por este cambio. Si tienes acceso a la tabla C.52.1 bis 2 (cables XLPE/EPR, 90°C) de la norma 2022, puedes pasármela y ajusto los valores exactos."],
-  agrup: ["Circuitos agrupados", "Número de cables de fuerza que circulan juntos, en contacto o muy próximos, por el mismo tramo (tubo, bandeja, canaleta). Cuantos más cables agrupados, peor se refrigeran entre sí y menos corriente admite cada uno (factor de agrupamiento). Si no lo sabes, cuenta los circuitos que van físicamente pegados en el tramo más cargado."],
+  metodo: ["Método de instalación del cableado", "Cuanto peor se refrigera el cable, menos corriente admite para la misma sección. De menor a mayor capacidad, de forma orientativa: A (conductores aislados en tubo empotrado en pared aislante, el que peor refrigera) < A2 (multiconductor en tubo empotrado) < B / B2 (tubo en montaje superficial o empotrado en obra) < C (multiconductor directamente sobre la pared o bandeja no perforada) < E (multiconductor al aire libre / bandeja perforada) < F (unipolares en contacto mutuo, trébol) < G (unipolares separados un mínimo de D). Si no lo sabes, usa E (bandeja perforada / al aire), el más habitual en bandejas portacables industriales. IMPORTANTE: la intensidad admisible NO depende solo del método. La Tabla 1 de la ITC-BT-19 la indexa por método + naturaleza del aislamiento (PVC o XLPE/EPR) + número de conductores con carga. El aislamiento lo eliges en la sección 01 y el número de conductores con carga se deduce de la alimentación del circuito: 3 en trifásico y 2 en monofásico. Los métodos F y G solo están tabulados a partir de 25 mm²."],
+  notaTabla2022: ["De dónde salen las intensidades admisibles", "Los valores proceden de la Tabla 1 del apartado 2.2.3 de la ITC-BT-19 del REBT (Real Decreto 842/2002), tal como aparece en el texto consolidado publicado en el BOE, para conductor de cobre. Esa tabla está dada para una temperatura ambiente del aire de 40 °C, y tiene once columnas numeradas que se reparten entre las distintas combinaciones de método de instalación, aislamiento y número de conductores con carga — no una columna por método. Situación normativa: la Resolución de 20 de marzo de 2025 (BOE-A-2025-6773) actualizó el listado de normas de la ITC-BT-02 y, desde el 4 de abril de 2025, remite a la UNE-HD 60364-5-52:2022 junto con su modificación A12:2023 en lugar de la edición de 2014. El periodo de coexistencia con la edición anterior terminó el 1 de octubre de 2025. En esa edición de 2022 la tabla simplificada al aire se divide en dos: C.52.1 bis 1 para cables termoplásticos (PVC, 70 °C) y C.52.1 bis 2 para termoestables (XLPE/EPR, 90 °C). Los cambios respecto a 2014 son mixtos: hay valores que suben y valores que bajan. Esa norma es de AENOR y no es de acceso libre, así que esta calculadora trabaja con la Tabla 1 impresa en el REBT y te ofrece aplicar sobre ella un margen de seguridad propio del 0,94 (ver \"Margen de seguridad sobre Iz\"). Ese 0,94 es un criterio conservador de esta herramienta, NO un valor normativo ni una recomendación de ningún fabricante. Si consigues las tablas C.52.1 bis 1 y bis 2 de la edición 2022, pásamelas y se sustituyen los valores por los exactos. Las tablas de instalación ENTERRADA (ITC-BT-07) no se han visto afectadas por este cambio."],
+  aislamiento: ["Aislamiento del cable", "Determina la temperatura máxima admisible del conductor y, con ella, tanto la intensidad que admite como su resistencia en servicio. Termoplástico (PVC) trabaja hasta 70 °C; termoestable (XLPE o EPR) hasta 90 °C, así que admite bastante más corriente para la misma sección. La Tabla 1 de la ITC-BT-19 tiene columnas distintas para cada uno, y la UNE-HD 60364-5-52:2022 llegó a separarlos en dos tablas independientes. Además fija la resistividad usada en el cálculo de caída de tensión: PVC a 70 °C → ρ=0,02132 Ω·mm²/m; XLPE a 90 °C → ρ=0,02267 Ω·mm²/m (equivalente a la conductividad γ≈44 del cobre que el REBT usa en acometidas y líneas generales de alimentación). En instalación industrial lo habitual hoy es cable termoestable libre de halógenos tipo RZ1-K (XLPE): si no lo sabes y el cable es RZ1-K, elige XLPE."],
+  margenIz: ["Margen de seguridad sobre Iz", "Factor que se multiplica por la intensidad admisible de la Tabla 1 del REBT antes de comparar con la corriente de servicio. Con 1,00 trabajas exactamente con la tabla publicada en la ITC-BT-19. Con 0,94 aplicas un margen del 6% por tu cuenta, que es el criterio conservador recomendado en esta herramienta mientras la tabla de la UNE-HD 60364-5-52:2022 (a la que remite la ITC-BT-02 desde el 4/4/2025) no esté disponible celda a celda: como los cambios de esa edición son mixtos, con el margen te aseguras de no conceder más intensidad de la que podría permitir la tabla nueva. Ese 0,94 es un criterio propio, no una exigencia normativa."],
+  tipoSuministro: ["Tipo de suministro", "Fija el límite legal de caída de tensión que aplica al conjunto, según el apartado 2.2.2 de la ITC-BT-19. En una instalación interior o receptora normal alimentada en baja tensión, el máximo entre el origen de la instalación interior y cualquier punto de utilización es del 3% para alumbrado y del 5% para los demás usos. Si la instalación industrial se alimenta directamente en alta tensión mediante un transformador de distribución propio, el origen se considera en la salida del transformador y los máximos suben al 4,5% para alumbrado y al 6,5% para los demás usos. Si no lo sabes, deja la primera opción: es la más restrictiva. La calculadora no te impide poner un valor mayor, pero te avisa si superas el límite aplicable."],
+  agrup: ["Circuitos agrupados", "Número de cables de fuerza que circulan juntos, en contacto o muy próximos, por el mismo tramo (tubo, bandeja, canaleta). Cuantos más cables agrupados, peor se refrigeran entre sí y menos corriente admite cada uno. Si no lo sabes, cuenta los circuitos que van físicamente pegados en el tramo más cargado. Factores aplicados: 1 → 1,00 · 2 → 0,80 · 3 → 0,70 · 4 → 0,65 · 5 → 0,60 · 6 → 0,57 · 7 → 0,54 · 8 → 0,52 · 9 → 0,50 · 12 → 0,45 · 16 → 0,41 · 20 o más → 0,38. La ITC-BT-19 no publica estos factores: su apartado 2.2.3 remite a la UNE 20.460-5-523, de donde se toman. Se usan los de agrupación en tubo, conducto o canaleta, que es el caso más restrictivo, y se aplican también a los métodos al aire (bandeja), donde la norma admite factores más favorables: es una simplificación deliberadamente conservadora."],
   calor: ["% de calor aportado al cuadro", "Porcentaje de la potencia eléctrica consumida por ese elemento que realmente se disipa como calor dentro del cuadro. Un motor instalado fuera del cuadro apenas aporta calor (0%), un variador de frecuencia dentro del cuadro aporta sus pérdidas de conmutación (2-4%), y una resistencia o carga alojada dentro del cuadro puede aportar prácticamente el 100%. Si no lo sabes, usa 3% para variadores y 0% para motores externos."],
   sensGeneral: ["Sensibilidad del diferencial general", "Corriente de fuga a tierra que provoca el disparo del diferencial, en mA. Cuanto más baja, mayor protección de personas, pero más riesgo de disparos intempestivos al sumarse pequeñas fugas de muchos circuitos. En cuadros generales industriales es habitual usar 300 mA o 500 mA de tipo selectivo (retardado), reservando 30 mA para subcuadros donde hay contacto directo de personas. Si no lo sabes, usa 300 mA selectivo."],
   distAcometida: ["Distancia de la acometida", "Distancia en metros desde el punto de suministro (cuadro general de la fábrica, transformador, etc.) hasta este cuadro. Se usa junto con la corriente total para calcular la sección del cable de acometida y su caída de tensión. Si no la conoces, mídela o estímala sobre el plano eléctrico de la instalación."],
@@ -698,43 +834,102 @@ function closeInfo(){
 
 // ---------- DATOS DE REFERENCIA ----------
 
-// Capacidad de corriente Iz (A) para conductor de Cu, unipolares/multiconductores, aislados,
-// según método de instalación (REBT ITC-BT-19 / UNE-HD 60364-5-52), 2 y 3 conductores cargados.
-// Origen de los valores numéricos: tabla de referencia clásica (base UNE-HD 60364-5-52:2014,
-// idéntica a la que maneja el usuario). Desde el 4/4/2025 la ITC-BT-02 remite a la edición
-// UNE-HD 60364-5-52:2022 para la tabla simplificada "al aire" (C.52.1 bis), con variaciones
-// documentadas de hasta ±6% respecto a la tabla de 2014 (fuente: Prysmian/COGITI, abril 2025).
-// Mientras no se dispone del valor exacto 2022 celda a celda, se aplica un factor de seguridad
-// de 0,94 (recomendado por el propio fabricante Prysmian como método transitorio) para no
-// conceder nunca más intensidad admisible de la legalmente permitida. Las tablas de
-// instalación ENTERRADA (ITC-BT-07) NO han cambiado con esta revisión.
-const FACTOR_TRANSICION_2022 = 0.94;
-const TABLA_IZ_BASE = {
-  A:  {1.5:11, 2.5:15, 4:20, 6:25, 10:34, 16:45, 25:59},
-  A2: {1.5:13, 2.5:17.5, 4:23, 6:30, 10:40, 16:54, 25:70, 35:86, 50:103},
-  B1: {1.5:15, 2.5:21, 4:27, 6:36, 10:50, 16:66, 25:84, 35:104, 50:125, 70:160, 95:194, 120:225, 150:260, 185:297, 240:350, 300:404},
-  B2: {1.5:16, 2.5:22, 4:30, 6:37, 10:52, 16:70, 25:88, 35:110, 50:133, 70:171, 95:207, 120:240, 150:278, 185:317, 240:374, 300:423},
-  C:  {25:96, 35:119, 50:145, 70:188, 95:230, 120:267, 150:310, 185:354, 240:419, 300:484},
-  E:  {1.5:18, 2.5:25, 4:34, 6:44, 10:60, 16:80, 25:106, 35:131, 50:159, 70:202, 95:245, 120:284, 150:338, 185:386, 240:455, 300:524},
-  F:  {1.5:21, 2.5:29, 4:38, 6:49, 10:68, 16:91, 25:116, 35:144, 50:175, 70:224, 95:271, 120:314, 150:363, 185:415, 240:490, 300:565},
-  G:  {1.5:24, 2.5:33, 4:45, 6:57, 10:76, 16:105, 25:123, 35:154, 50:188, 70:244, 95:296, 120:348, 150:404, 185:464, 240:552, 300:640},
-  G2: {25:166, 35:206, 50:250, 70:321, 95:391, 120:455, 150:525, 185:601, 240:711, 300:821}
+// ===========================================================================
+// TABLA 1 DE LA ITC-BT-19 (REBT, RD 842/2002) — INTENSIDADES ADMISIBLES
+// ---------------------------------------------------------------------------
+// Fuente: texto consolidado del RD 842/2002 publicado en el BOE
+// (BOE-A-2002-18099), ITC-BT-19 apartado 2.2.3, "Tabla 1. Intensidades
+// admisibles (A) al aire 40 ºC. Nº de conductores con carga y naturaleza del
+// aislamiento". Conductor de COBRE.
+//
+// IMPORTANTE — cómo está construida esta tabla en el reglamento:
+// la tabla oficial NO tiene una columna por método de instalación. Tiene ONCE
+// columnas numeradas, y cada columna se comparte entre varias combinaciones de
+// (método de instalación + naturaleza del aislamiento + nº de conductores con
+// carga). Por ejemplo, la columna 9 sirve a la vez para B-2xXLPE, C-2xXLPE,
+// E-3xXLPE y G-3xPVC. Por eso aquí se guardan las once columnas tal cual y se
+// resuelve el acceso mediante MAP_METODO_COL.
+//
+// La temperatura de referencia de esta tabla es 40 ºC (no 30 ºC).
+// ===========================================================================
+const IZ_COL = {
+  1:  {1.5:11,   2.5:15,   4:20, 6:25, 10:34, 16:45, 25:59},
+  2:  {1.5:11.5, 2.5:16,   4:21, 6:27, 10:37, 16:49, 25:64, 35:77, 50:94},
+  3:  {1.5:13,   2.5:17.5, 4:23, 6:30, 10:40, 16:54, 25:70, 35:86, 50:103},
+  4:  {1.5:13.5, 2.5:18.5, 4:24, 6:32, 10:44, 16:59, 25:77, 35:96,  50:117, 70:149, 95:180, 120:208, 150:236, 185:268, 240:315, 300:360},
+  5:  {1.5:15,   2.5:21,   4:27, 6:36, 10:50, 16:66, 25:84, 35:104, 50:125, 70:160, 95:194, 120:225, 150:260, 185:297, 240:350, 300:404},
+  6:  {1.5:16,   2.5:22,   4:30, 6:37, 10:52, 16:70, 25:88, 35:110, 50:133, 70:171, 95:207, 120:240, 150:278, 185:317, 240:374, 300:423},
+  7:  {                                              25:96, 35:119, 50:145, 70:188, 95:230, 120:267, 150:310, 185:354, 240:419, 300:484},
+  8:  {1.5:18,   2.5:25,   4:34, 6:44, 10:60, 16:80, 25:106,35:131, 50:159, 70:202, 95:245, 120:284, 150:338, 185:386, 240:455, 300:524},
+  9:  {1.5:21,   2.5:29,   4:38, 6:49, 10:68, 16:91, 25:116,35:144, 50:175, 70:224, 95:271, 120:314, 150:363, 185:415, 240:490, 300:565},
+  10: {1.5:24,   2.5:33,   4:45, 6:57, 10:76, 16:105,25:123,35:154, 50:188, 70:244, 95:296, 120:348, 150:404, 185:464, 240:552, 300:640},
+  11: {                                              25:166,35:206, 50:250, 70:321, 95:391, 120:455, 150:525, 185:601, 240:711, 300:821}
 };
+
+// Mapa (método de instalación → aislamiento → nº de conductores con carga → columna)
+// exactamente como aparecen distribuidas las celdas en la Tabla 1 de la ITC-BT-19.
+const MAP_METODO_COL = {
+  A:  {PVC:{3:2, 2:3}, XLPE:{3:5,  2:6}},
+  A2: {PVC:{3:1, 2:2}, XLPE:{3:4,  2:5}},
+  B:  {PVC:{3:4, 2:5}, XLPE:{3:8,  2:9}},
+  B2: {PVC:{3:3, 2:4}, XLPE:{3:6,  2:8}},
+  C:  {PVC:{3:5, 2:6}, XLPE:{3:8,  2:9}},
+  E:  {PVC:{3:6, 2:8}, XLPE:{3:9,  2:10}},
+  F:  {PVC:{3:7},      XLPE:{3:10}},
+  G:  {PVC:{3:9},      XLPE:{3:11}}
+};
+
 const METODOS_INFO = {
   A:  "A — Conductores aislados en tubo empotrado en pared aislante",
   A2: "A2 — Cable multiconductor en tubo empotrado en pared aislante",
-  B1: "B1 — Conductores aislados en tubo, montaje superficial o empotrado en obra",
+  B:  "B — Conductores aislados en tubo, montaje superficial o empotrado en obra",
   B2: "B2 — Cable multiconductor en tubo, montaje superficial o empotrado en obra",
-  C:  "C — Cable multiconductor directamente sobre la pared (≥25 mm²)",
+  C:  "C — Cable multiconductor directamente sobre la pared o bandeja no perforada",
   E:  "E — Cable multiconductor al aire libre / bandeja perforada",
   F:  "F — Cables unipolares en contacto mutuo (trébol)",
-  G:  "G — Cables unipolares separados entre sí",
-  G2: "G2 — Cables unipolares muy separados, máxima disipación (≥25 mm²)"
+  G:  "G — Cables unipolares separados un mínimo de D (diámetro del cable)"
 };
-function iz(metodo, s){
-  const base = TABLA_IZ_BASE[metodo][s];
+
+// Temperatura de referencia de la Tabla 1 de la ITC-BT-19.
+const T_REF_TABLA = 40;
+
+// Margen de seguridad propio, NO normativo.
+// Contexto: la Tabla 1 impresa en la ITC-BT-19 procede de la UNE 20.460-5-523.
+// La Resolución de 20/03/2025 (BOE-A-2025-6773) actualizó el listado de la
+// ITC-BT-02 y desde el 4/4/2025 remite a UNE-HD 60364-5-52:2022 + A12:2023,
+// cuya tabla simplificada al aire se divide en C.52.1 bis 1 (termoplásticos,
+// 70 ºC) y C.52.1 bis 2 (termoestables, 90 ºC). El periodo de coexistencia con
+// la edición anterior terminó el 1/10/2025. Los cambios de la edición 2022 son
+// MIXTOS (hay valores que suben y valores que bajan), así que un factor plano
+// no reproduce la norma nueva: es solo un margen conservador mientras no se
+// disponga de la tabla 2022 celda a celda (norma AENOR, de pago).
+// Ponlo a 1 si quieres trabajar con la Tabla 1 del REBT sin margen añadido.
+let MARGEN_SEGURIDAD_IZ = 0.94;
+
+// Nota 1) de la Tabla 1: "A partir de 25 mm² de sección". Afecta a celdas
+// concretas, no a columnas completas: la columna 10 la comparten E-2xXLPE
+// (tabulada desde 1,5 mm²) y F-3xXLPE (solo desde 25 mm²), y lo mismo ocurre
+// con la columna 9 entre E-3xXLPE y G-3xPVC. Por eso el límite se guarda por
+// combinación método/aislamiento/nº de conductores, no por columna.
+const MIN_SECCION_CELDA = {
+  'F|XLPE|3': 25,
+  'G|PVC|3':  25
+};
+
+// Devuelve la Iz de tabla (A) a 40 ºC para un método, aislamiento, nº de
+// conductores con carga y sección. undefined si esa celda no existe en la tabla.
+function iz(metodo, s, aislamiento, nCargados){
+  const porMetodo = MAP_METODO_COL[metodo];
+  if(!porMetodo) return undefined;
+  const porAislamiento = porMetodo[aislamiento];
+  if(!porAislamiento) return undefined;
+  const col = porAislamiento[nCargados] !== undefined ? porAislamiento[nCargados] : porAislamiento[3];
+  if(col === undefined) return undefined;
+  const sMinCelda = MIN_SECCION_CELDA[metodo+'|'+aislamiento+'|'+nCargados];
+  if(sMinCelda !== undefined && s < sMinCelda) return undefined;
+  const base = IZ_COL[col][s];
   if(base === undefined) return undefined;
-  return base * FACTOR_TRANSICION_2022;
+  return base * MARGEN_SEGURIDAD_IZ;
 }
 document.getElementById('metodoAcometida').innerHTML =
   Object.keys(METODOS_INFO).map(k=>`<option value="${k}" ${k==='E'?'selected':''}>${METODOS_INFO[k]}</option>`).join('');
@@ -742,35 +937,50 @@ document.getElementById('mi_metodo').innerHTML =
   Object.keys(METODOS_INFO).map(k=>`<option value="${k}" ${k==='E'?'selected':''}>${METODOS_INFO[k]}</option>`).join('');
 
 function calcularMotorIndependiente(){
+  const errores = [];
   const nombre = document.getElementById('mi_nombre').value || "Motor";
   const tipo = document.getElementById('mi_tipo').value;
-  const potKW = parseFloat(document.getElementById('mi_pot').value);
+  const potKW  = num('mi_pot',   'Potencia del motor (kW)', {mayorQueCero:true}, errores);
   const alim = document.getElementById('mi_alim').value;
-  const cosf = parseFloat(document.getElementById('mi_cosf').value);
-  const eta = parseFloat(document.getElementById('mi_eta').value)/100;
-  const long = parseFloat(document.getElementById('mi_long').value);
+  const cosf   = num('mi_cosf',  'cos φ',                   {mayorQueCero:true, max:1}, errores);
+  const etaPct = num('mi_eta',   'Rendimiento η (%)',       {mayorQueCero:true, max:100}, errores);
+  const long   = num('mi_long',  'Longitud del cable (m)',  {mayorQueCero:true}, errores);
   const metodo = document.getElementById('mi_metodo').value;
-  const agrup = parseInt(document.getElementById('mi_agrup').value);
-  const tAmbMi = parseFloat(document.getElementById('mi_tamb').value);
-  const vdropMi = parseFloat(document.getElementById('mi_vdrop').value);
+  const agrup  = num('mi_agrup', 'Circuitos agrupados',     {min:1}, errores);
+  const tAmbMi = num('mi_tamb',  'Temperatura ambiente (°C)', {min:-20, max:80}, errores);
+  const vdropMi= num('mi_vdrop', 'Caída de tensión máxima (%)', {mayorQueCero:true, max:20}, errores);
   const margenOn = document.getElementById('mi_margen').checked;
 
+  mostrarErrores(errores, 'mi_errores');
+  if(errores.length){ document.getElementById('resultadoMotorIndependiente').style.display='none'; return; }
+
+  MARGEN_SEGURIDAD_IZ = parseFloat(document.getElementById('margenIz').value) || 0.94;
+  const aisl = aislamientoActual();
+  const eta = etaPct/100;
   const potW = potKW*1000;
   const V = alim==='mono230' ? 230 : 400;
   const trifasico = alim!=='mono230';
-  let ib = trifasico ? potW/(Math.sqrt(3)*V*cosf*eta) : potW/(V*cosf*eta);
+  const ib = trifasico ? potW/(Math.sqrt(3)*V*cosf*eta) : potW/(V*cosf*eta);
   const ibDiseno = margenOn ? ib*1.25 : ib;
 
-  const ftempMi = factorTemp(tAmbMi);
+  const ftempMi = factorTemp(tAmbMi, aisl);
   const fagrupMi = factorAgrupamiento(agrup);
-  const elegido = calcularSeccionYVd(ibDiseno, metodo, ftempMi, fagrupMi, V, long, trifasico, vdropMi);
+  // Se aplica el mismo criterio de sección mínima práctica que en el cuadro
+  // completo: antes esta calculadora no lo recibía y daba resultados distintos.
+  const minSeccion = document.getElementById('seccionMinPractica').checked ? 2.5 : SECCIONES[0];
+
+  const elegido = calcularSeccionYVd(ibDiseno, {
+    metodo, aislamiento:aisl, ftemp:ftempMi, fagrup:fagrupMi,
+    V, long, trifasico, vdropMax:vdropMi, minSeccion, cosf, material:'cu'
+  });
   const breaker = breakerRecomendado(ibDiseno, elegido.izCorr);
   const guardamotor = pickGuardamotor(ib);
   const curva = "D (motor)";
+  const avisos = avisosDeSeccion(elegido, breaker, metodo, aisl);
 
   document.getElementById('mi_resSeccion').textContent = elegido.seccion+" mm²"+(elegido.insuficiente?' ⚠':'');
   document.getElementById('mi_resSeccionSub').innerHTML = `Por intensidad: <strong>${elegido.seccionPorIntensidad} mm²</strong> · Por caída U: <strong>${elegido.seccionPorCaidaTension} mm²</strong> (decisivo: ${elegido.criterioDecisivo})`;
-  document.getElementById('mi_resBreaker').textContent = breaker+" A";
+  document.getElementById('mi_resBreaker').textContent = breaker.valor+" A"+(breaker.ok?'':' ⚠');
   document.getElementById('mi_resBreakerSub').textContent = `Curva ${curva} · Iz corr. ${elegido.izCorr.toFixed(1)} A`;
   document.getElementById('mi_resGuardamotor').textContent = guardamotor;
   document.getElementById('mi_resGuardamotorSub').textContent = `Ajustar al valor real de placa, Ib = ${ib.toFixed(1)} A`;
@@ -778,14 +988,30 @@ function calcularMotorIndependiente(){
   document.getElementById('mi_resVdSub').textContent = `Máx. admitida ${vdropMi}% · a ${long} m`;
 
   document.getElementById('cascadaMotorIndependiente').innerHTML = `
-    <div class="step"><span class="step-num">1</span><span>${nombre} (${tipo==='Variador de frecuencia'?'con variador':'arranque directo'}), ${potKW} kW a ${V}V, cos φ ${cosf}, η ${(eta*100).toFixed(0)}%</span></div>
+    <div class="step"><span class="step-num">1</span><span>${esc(nombre)} (${tipo==='Variador de frecuencia'?'con variador':'arranque directo'}), ${potKW} kW a ${V}V, cos φ ${cosf}, η ${(eta*100).toFixed(0)}%</span></div>
     <div class="step"><span class="step-num">2</span><span>Ib real (placa): <strong>${ib.toFixed(1)} A</strong></span></div>
     <div class="step"><span class="step-num">3</span><span>Ib de diseño para cable/breaker ${margenOn?'(+25% arranque)':'(sin margen)'}: <strong>${ibDiseno.toFixed(1)} A</strong></span></div>
-    <div class="step"><span class="step-num">4</span><span>Método ${metodo} · Tamb ${tAmbMi}°C (ftemp ${ftempMi.toFixed(2)}) · ${agrup} circuito(s) agrupado(s) (fagrup ${fagrupMi.toFixed(2)}) · ${long} m</span></div>
-    <div class="step step-total"><span class="step-num">=</span><span>Sección ${elegido.seccion} mm² · Iz corr. ${elegido.izCorr.toFixed(1)} A · ΔU ${elegido.vd.toFixed(2)}% · magnetotérmico ${breaker} A curva D · guardamotor ${guardamotor}</span></div>
+    <div class="step"><span class="step-num">4</span><span>Método ${metodo} · ${aisl} · ${elegido.nCargados} conductores con carga · Tabla 1 ITC-BT-19 a 40°C · Tamb ${tAmbMi}°C (ftemp ${ftempMi.toFixed(2)}) · ${agrup} circuito(s) agrupado(s) (fagrup ${fagrupMi.toFixed(2)}) · ${long} m</span></div>
+    <div class="step step-total"><span class="step-num">=</span><span>Sección ${elegido.seccion} mm² · Iz corr. ${elegido.izCorr.toFixed(1)} A · ΔU ${elegido.vd.toFixed(2)}% · magnetotérmico ${breaker.valor} A curva D · guardamotor ${guardamotor}</span></div>
+    ${avisos}
   `;
 
-  document.getElementById('resultadoMotorIndependiente').style.display = 'block';
+  const cont = document.getElementById('resultadoMotorIndependiente');
+  cont.style.display = 'block';
+  cont.classList.remove('obsoleto');
+}
+
+// Avisos comunes a cualquier resultado de sección.
+function avisosDeSeccion(elegido, breaker, metodo, aisl){
+  const av = [];
+  if(elegido.sinTabla) av.push(`El método <strong>${metodo}</strong> no tiene ninguna sección tabulada en la Tabla 1 de la ITC-BT-19 para aislamiento ${aisl} con ${elegido.nCargados} conductores con carga. Elige otro método o cambia el aislamiento.`);
+  if(elegido.forzadaPorTabla) av.push(`La sección no la ha decidido la carga: la Tabla 1 de la ITC-BT-19 <strong>no tabula el método ${metodo}</strong> con aislamiento ${aisl} y ${elegido.nCargados} conductores con carga por debajo de ${elegido.seccionPorIntensidad} mm² (nota 1 de la tabla: "a partir de 25 mm²"). Se han descartado ${elegido.seccionesNoTabuladas.join(', ')} mm². Si necesitas una sección menor, este método de instalación no es el adecuado.`);
+  if(elegido.topeTabla) av.push(`La sección resultante supera la mayor sección que la Tabla 1 tabula para el método <strong>${metodo}</strong>. Se ha conservado la Iz de la última sección tabulada (no se concede capacidad extra por el cobre añadido). Revisa si ese método de instalación es realista para esta sección.`);
+  if(elegido.insuficiente) av.push(`Ni con 300 mm² se cumplen los dos criterios. Hay que <strong>repartir la carga en varios circuitos</strong>, acortar el tramo o usar conductores en paralelo.`);
+  if(breaker && !breaker.ok) av.push(`Magnetotérmico: ${breaker.motivo}.`);
+  if(elegido.reactanciaRelevante) av.push(`Sección superior a 120 mm²: el cálculo de ΔU desprecia la reactancia del cable, que a partir de esta sección ya no es despreciable. Comprueba la caída con los datos de reactancia del fabricante.`);
+  if(!av.length) return '';
+  return av.map(a=>`<div class="step step-aviso"><span class="step-num">⚠</span><span>${a}</span></div>`).join('');
 }
 const SECCIONES = [1.5,2.5,4,6,10,16,25,35,50,70,95,120,150,185,240,300];
 const BREAKERS = [6,10,16,20,25,32,40,50,63,80,100,125,160,200,250,315,400];
@@ -798,30 +1024,73 @@ const GUARDAMOTOR_RANGES = [
   [4,6],[6,10],[9,14],[13,18],[17,23],[20,25],[23,32],[30,38],[37,50],[48,65],[63,80],[70,100]
 ];
 
-// Factor de corrección por temperatura ambiente (referencia 30°C, aislamiento PVC)
-function factorTemp(t){
-  const tabla = {20:1.12,25:1.06,30:1.00,35:0.94,40:0.87,45:0.79,50:0.71,55:0.61,60:0.50};
+// ---------------------------------------------------------------------------
+// Factores de corrección por temperatura ambiente.
+// La ITC-BT-19 no publica estos factores: su apartado 2.2.3 remite expresamente
+// a la UNE 20.460-5-523 ("Para otras temperaturas... consultar la Norma"), que
+// es de pago. Se usan los valores establecidos de esa norma / IEC 60364-5-52,
+// tabulados con referencia 30 ºC, y se REBASAN a los 40 ºC de la Tabla 1
+// dividiendo por el factor a 40 ºC. Así el factor vale exactamente 1,00 a 40 ºC,
+// que es la temperatura a la que están dadas las intensidades de la tabla.
+// ---------------------------------------------------------------------------
+const FTEMP_REF30 = {
+  PVC:  {10:1.22, 15:1.17, 20:1.12, 25:1.06, 30:1.00, 35:0.94, 40:0.87, 45:0.79, 50:0.71, 55:0.61, 60:0.50},
+  XLPE: {10:1.15, 15:1.12, 20:1.08, 25:1.04, 30:1.00, 35:0.96, 40:0.91, 45:0.87, 50:0.82, 55:0.76, 60:0.71}
+};
+function interpTabla(tabla, t){
   const keys = Object.keys(tabla).map(Number).sort((a,b)=>a-b);
   if(t<=keys[0]) return tabla[keys[0]];
   if(t>=keys[keys.length-1]) return tabla[keys[keys.length-1]];
   for(let i=0;i<keys.length-1;i++){
     if(t>=keys[i] && t<=keys[i+1]){
       const f0=tabla[keys[i]], f1=tabla[keys[i+1]];
-      const frac=(t-keys[i])/(keys[i+1]-keys[i]);
-      return f0+(f1-f0)*frac;
+      return f0+(f1-f0)*((t-keys[i])/(keys[i+1]-keys[i]));
     }
   }
   return 1.0;
 }
-
-// Factor de agrupamiento (circuitos juntos, una capa)
-function factorAgrupamiento(n){
-  const tabla = {1:1.00,2:0.80,3:0.70,4:0.65,5:0.60,6:0.57,7:0.57,8:0.57,9:0.50};
-  if(n>=9) return 0.50;
-  return tabla[n] || 1.0;
+function factorTemp(t, aislamiento){
+  const tabla = FTEMP_REF30[aislamiento] || FTEMP_REF30.XLPE;
+  return interpTabla(tabla, t) / tabla[T_REF_TABLA];
 }
 
-const RESISTIVIDAD_CU = 0.021; // ohm*mm2/m (aprox., cobre en servicio, ~70-90°C)
+// ---------------------------------------------------------------------------
+// Factor de agrupamiento de varios circuitos (una sola capa).
+// Valores de UNE 20.460-5-523 / IEC 60364-5-52 para agrupación en tubo,
+// conducto o canaleta, que es el caso más restrictivo. Se aplica también a los
+// métodos al aire (bandeja), donde la norma admite factores más favorables:
+// es una simplificación deliberadamente conservadora.
+// Corrige el error anterior, que repetía el valor de 6 circuitos (0,57) para
+// 7 y 8, concediendo más intensidad admisible de la permitida.
+// ---------------------------------------------------------------------------
+const FAGRUP = {1:1.00, 2:0.80, 3:0.70, 4:0.65, 5:0.60, 6:0.57, 7:0.54, 8:0.52, 9:0.50, 12:0.45, 16:0.41, 20:0.38};
+function factorAgrupamiento(n){
+  if(!(n>=1)) return 1.0;
+  n = Math.floor(n);
+  if(FAGRUP[n] !== undefined) return FAGRUP[n];
+  const keys = Object.keys(FAGRUP).map(Number).sort((a,b)=>a-b);
+  if(n >= keys[keys.length-1]) return FAGRUP[keys[keys.length-1]];
+  // entre dos valores tabulados, coger el inmediatamente inferior (conservador)
+  let f = 1.0;
+  for(const k of keys){ if(k<=n) f = FAGRUP[k]; }
+  return f;
+}
+
+// ---------------------------------------------------------------------------
+// Resistividad del conductor a la temperatura de servicio.
+// Depende del aislamiento, porque fija la temperatura máxima del conductor:
+// termoplástico (PVC) 70 ºC y termoestable (XLPE/EPR) 90 ºC.
+// El valor de XLPE (0,02267) equivale a γ≈44 para el cobre, que es la
+// conductividad que el REBT usa en acometidas y LGA (ITC-BT-11 / ITC-BT-14).
+// ---------------------------------------------------------------------------
+const RESISTIVIDAD = {
+  cu: {PVC: 0.02132, XLPE: 0.02267},
+  al: {PVC: 0.03390, XLPE: 0.03704}   // γ≈29,5 y γ≈27
+};
+function resistividadDe(material, aislamiento){
+  const m = RESISTIVIDAD[material] || RESISTIVIDAD.cu;
+  return m[aislamiento] !== undefined ? m[aislamiento] : m.XLPE;
+}
 
 const DEFAULTS_24V = {
   "Relé auxiliar": 1.5,
@@ -841,6 +1110,75 @@ const DEFAULTS_CALOR = {
 
 let circuitoId = 0;
 let elemento24Id = 0;
+
+// ---------- AISLAMIENTO, MÁRGENES Y LÍMITES LEGALES ----------
+function aislamientoActual(){
+  const el = document.getElementById('aislamiento');
+  return el ? el.value : 'XLPE';
+}
+function onAislamientoChange(){
+  // El aislamiento cambia la tabla de Iz, los factores de temperatura y la
+  // resistividad, así que cualquier resultado en pantalla queda obsoleto.
+  marcarResultadosObsoletos();
+}
+// Límites de caída de tensión de la ITC-BT-19 apartado 2.2.2:
+//   instalaciones interiores o receptoras: 3% alumbrado / 5% demás usos
+//   industrial alimentada en AT con transformador de distribución propio:
+//   4,5% alumbrado / 6,5% demás usos
+const LIMITES_VDROP = {
+  general: {alumbrado:3,   fuerza:5},
+  trafo:   {alumbrado:4.5, fuerza:6.5}
+};
+function limiteVdropLegal(){
+  const t = document.getElementById('tipoSuministro');
+  return LIMITES_VDROP[t ? t.value : 'general'] || LIMITES_VDROP.general;
+}
+function actualizarLimiteVdrop(){
+  const l = limiteVdropLegal();
+  const d = document.getElementById('limiteVdropDisplay');
+  if(d) d.value = l.fuerza+'% (fuerza) / '+l.alumbrado+'% (alumbrado)';
+  marcarResultadosObsoletos();
+}
+
+// ---------- VALIDACIÓN DE ENTRADAS ----------
+// Antes no había ninguna: vaciar un campo producía "NaN mm²" en pantalla, y un
+// cos φ o un rendimiento a 0 producía Infinity y una sección de 300 mm² sin
+// explicación.
+function num(id, nombre, {min=null, max=null, mayorQueCero=false}={}, errores){
+  const el = document.getElementById(id);
+  const v = parseFloat(el ? el.value : NaN);
+  if(!isFinite(v)){ errores.push(nombre+': valor vacío o no numérico'); return NaN; }
+  if(mayorQueCero && v<=0){ errores.push(nombre+': debe ser mayor que cero'); return NaN; }
+  if(min!==null && v<min){ errores.push(nombre+': no puede ser menor que '+min); return NaN; }
+  if(max!==null && v>max){ errores.push(nombre+': no puede ser mayor que '+max); return NaN; }
+  return v;
+}
+function numEl(el, nombre, {min=null, max=null, mayorQueCero=false}={}, errores){
+  const v = parseFloat(el ? el.value : NaN);
+  if(!isFinite(v)){ errores.push(nombre+': valor vacío o no numérico'); return NaN; }
+  if(mayorQueCero && v<=0){ errores.push(nombre+': debe ser mayor que cero'); return NaN; }
+  if(min!==null && v<min){ errores.push(nombre+': no puede ser menor que '+min); return NaN; }
+  if(max!==null && v>max){ errores.push(nombre+': no puede ser mayor que '+max); return NaN; }
+  return v;
+}
+function mostrarErrores(errores, contenedorId){
+  const c = document.getElementById(contenedorId);
+  if(!c) return;
+  if(!errores.length){ c.style.display='none'; c.innerHTML=''; return; }
+  c.style.display='block';
+  c.innerHTML = '<strong>No se ha podido calcular. Revisa estos campos:</strong><ul>'+
+    errores.map(e=>'<li>'+esc(e)+'</li>').join('')+'</ul>';
+}
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function marcarResultadosObsoletos(){
+  const r = document.getElementById('results');
+  if(r && r.style.display!=='none') r.classList.add('obsoleto');
+  const m = document.getElementById('resultadoMotorIndependiente');
+  if(m && m.style.display!=='none') m.classList.add('obsoleto');
+}
 
 function toggleDistribuidor(){
   const on = document.getElementById('hayDistribuidor').checked;
@@ -943,36 +1281,28 @@ function toggleEspecial(id){
   input.disabled = !tr.querySelector('.e-especial').checked;
 }
 
-// Filas iniciales de ejemplo
-addCircuito("Cinta transportadora", "Variador de frecuencia", 4, "trif400", 0.9, 92, 20, "E", 2);
-addCircuito("Bomba auxiliar", "Motor (fuera del cuadro)", 1.1, "trif400", 0.85, 88, 15, "E", 2);
-add24v("Relé auxiliar", 6);
-add24v("Fotocélula", 4);
-add24v("Sensor inductivo", 8);
-add24v("Electroválvula", 3);
+// El arranque (restaurar estado o cargar filas de ejemplo) está al final del
+// script, porque necesita las constantes de la sección de persistencia.
 
 // ---------- CÁLCULO ----------
 
-function seccionMinima(ibDiseno, metodo, ftemp, fagrup){
-  for(const s of SECCIONES){
-    const izBase = TABLA_IZ[metodo][s];
-    const izCorr = izBase * ftemp * fagrup;
-    if(izCorr >= ibDiseno) return {seccion:s, izCorr:izCorr};
-  }
-  const sMax = SECCIONES[SECCIONES.length-1];
-  return {seccion:sMax, izCorr: TABLA_IZ[metodo][sMax]*ftemp*fagrup, insuficiente:true};
-}
-
+// Selección del magnetotérmico según la condición Ib ≤ In ≤ Iz (ITC-BT-22 /
+// IEC 60364-4-43). Devuelve {valor, ok}. Si NINGÚN calibre normalizado cumple
+// las dos condiciones a la vez, se devuelve ok:false: antes se devolvía en
+// silencio el mayor calibre por debajo de Iz, que puede quedar por DEBAJO de Ib
+// y hacer disparar la protección con la carga normal.
 function breakerRecomendado(ib, izCorr){
   for(const b of BREAKERS){
-    if(b>=ib && b<=izCorr) return b;
+    if(b>=ib && b<=izCorr) return {valor:b, ok:true};
   }
-  // si ningún breaker estándar cumple ambas condiciones, coger el mayor <= izCorr
-  let candidato = null;
-  for(const b of BREAKERS){
-    if(b<=izCorr) candidato=b;
+  // Sin calibre válido. Se informa del motivo y se devuelve el primero que
+  // cubre la carga (In ≥ Ib), que es la condición irrenunciable: proteger por
+  // debajo de la corriente de servicio no es admisible.
+  const cubreCarga = BREAKERS.find(b=>b>=ib);
+  if(cubreCarga !== undefined){
+    return {valor:cubreCarga, ok:false, motivo:'ningún calibre normalizado cumple Ib ≤ In ≤ Iz; el indicado cubre la carga pero SUPERA la Iz del cable: hay que subir sección'};
   }
-  return candidato || BREAKERS[0];
+  return {valor:BREAKERS[BREAKERS.length-1], ok:false, motivo:'la corriente de servicio supera el mayor calibre contemplado ('+BREAKERS[BREAKERS.length-1]+' A): reparte la carga en varios circuitos'};
 }
 
 function pickGuardamotor(ib){
@@ -1002,96 +1332,222 @@ function pickSmallBreaker(iin){
   return SMALL_BREAKERS.find(b=>b>=target) || SMALL_BREAKERS[SMALL_BREAKERS.length-1];
 }
 
-// Si un método no está tabulado para una sección concreta (p.ej. método A por encima de 25mm²,
-// donde el REBT no da valores porque en la práctica no se usa tubo empotrado para secciones
-// grandes), se usa B1 como referencia conservadora y se marca con aviso.
-function izSafe(metodo, s){
-  const v = iz(metodo, s);
-  if(v !== undefined) return {valor:v, sustituido:false};
-  return {valor: iz('B1', s), sustituido:true};
+// Iz de tabla para una sección concreta, gestionando las celdas que la Tabla 1
+// no tabula. Dos casos distintos:
+//  - Sección MENOR que la primera tabulada del método (p.ej. F y G empiezan en
+//    25 mm²): esa sección no es utilizable con ese método → se descarta.
+//  - Sección MAYOR que la última tabulada (p.ej. el método A se corta en
+//    25 mm², porque en la práctica no se usa tubo empotrado para secciones
+//    grandes): se conserva la Iz de la última sección tabulada, es decir, no se
+//    concede capacidad adicional por el cobre extra. Es conservador y se avisa.
+function izSafe(metodo, s, aislamiento, nCargados){
+  const v = iz(metodo, s, aislamiento, nCargados);
+  if(v !== undefined) return {valor:v, disponible:true, topeTabla:false};
+  const tabuladas = SECCIONES.filter(x=>iz(metodo, x, aislamiento, nCargados) !== undefined);
+  if(!tabuladas.length) return {valor:0, disponible:false, topeTabla:false};
+  const sMin = tabuladas[0], sMax = tabuladas[tabuladas.length-1];
+  if(s < sMin) return {valor:0, disponible:false, topeTabla:false};
+  if(s > sMax) return {valor: iz(metodo, sMax, aislamiento, nCargados), disponible:true, topeTabla:true};
+  return {valor:0, disponible:false, topeTabla:false};
 }
 
-function seccionPorIntensidad(ib, metodo, ftemp, fagrup, minSeccion, izFactorMaterial){
-  minSeccion = minSeccion || SECCIONES[0];
-  izFactorMaterial = izFactorMaterial || 1;
+function seccionPorIntensidad(ib, o){
+  const minSeccion = o.minSeccion || SECCIONES[0];
+  const fMat = o.izFactorMaterial || 1;
+  let ultima = null;
+  // Secciones descartadas no por falta de capacidad, sino porque la Tabla 1 no
+  // las tabula para esa combinación (p.ej. F y G no existen por debajo de
+  // 25 mm²). Si acabamos subiendo de sección por este motivo hay que decirlo,
+  // porque si no parece que la calculadora se haya inventado el resultado.
+  const saltadasPorTabla = [];
   for(const s of SECCIONES){
     if(s < minSeccion) continue;
-    const base = izSafe(metodo, s);
-    const izCorr = base.valor*izFactorMaterial*ftemp*fagrup;
-    if(izCorr >= ib) return {seccion:s, izCorr:izCorr, sustituido:base.sustituido};
+    const base = izSafe(o.metodo, s, o.aislamiento, o.nCargados);
+    if(!base.disponible){ saltadasPorTabla.push(s); continue; }
+    const izCorr = base.valor*fMat*o.ftemp*o.fagrup;
+    ultima = {seccion:s, izCorr:izCorr, topeTabla:base.topeTabla,
+              forzadaPorTabla: saltadasPorTabla.length>0, saltadas:saltadasPorTabla.slice()};
+    if(izCorr >= ib) return ultima;
   }
-  const sMax = SECCIONES[SECCIONES.length-1];
-  const base = izSafe(metodo, sMax);
-  return {seccion:sMax, izCorr:base.valor*izFactorMaterial*ftemp*fagrup, insuficiente:true, sustituido:base.sustituido};
+  if(ultima) return {...ultima, insuficiente:true};
+  return {seccion:SECCIONES[SECCIONES.length-1], izCorr:0, insuficiente:true, sinTabla:true};
 }
 
-function seccionPorCaidaTension(ib, V, long, trifasico, vdropMaxLocal, minSeccion, resistividad){
-  minSeccion = minSeccion || SECCIONES[0];
-  resistividad = resistividad || RESISTIVIDAD_CU;
+function caidaTension(ib, s, o){
+  // ΔU resistiva. En trifásico √3·ρ·L·I·cosφ/S ; en monofásico 2·ρ·L·I·cosφ/S.
+  // Se desprecia la reactancia, aproximación admitida hasta unos 120 mm²
+  // (por encima se avisa en el resultado).
+  const cosf = (o.cosf===undefined || !(o.cosf>0)) ? 1 : o.cosf;
+  const k = o.trifasico ? Math.sqrt(3) : 2;
+  return (k*o.resistividad*o.long*ib*cosf)/(s*o.V)*100;
+}
+
+function seccionPorCaidaTension(ib, o){
+  const minSeccion = o.minSeccion || SECCIONES[0];
   for(const s of SECCIONES){
     if(s < minSeccion) continue;
-    const vd = trifasico
-      ? (Math.sqrt(3)*resistividad*long*ib)/(s*V)*100
-      : (2*resistividad*long*ib)/(s*V)*100;
-    if(vd <= vdropMaxLocal) return {seccion:s, vd:vd};
+    const vd = caidaTension(ib, s, o);
+    if(vd <= o.vdropMax) return {seccion:s, vd:vd};
   }
   const sMax = SECCIONES[SECCIONES.length-1];
-  const vd = trifasico
-    ? (Math.sqrt(3)*resistividad*long*ib)/(sMax*V)*100
-    : (2*resistividad*long*ib)/(sMax*V)*100;
-  return {seccion:sMax, vd:vd, insuficiente:true};
+  return {seccion:sMax, vd:caidaTension(ib, sMax, o), insuficiente:true};
 }
 
 // Calcula la sección definitiva como la MAYOR de las dos secciones parciales
 // (por intensidad admisible y por caída de tensión), devolviendo también
 // ambos resultados parciales para poder mostrarlos por separado.
-function calcularSeccionYVd(ib, metodo, ftemp, fagrup, V, long, trifasico, vdropMaxLocal, minSeccion, resistividad, izFactorMaterial){
-  resistividad = resistividad || RESISTIVIDAD_CU;
-  izFactorMaterial = izFactorMaterial || 1;
-  const porInt = seccionPorIntensidad(ib, metodo, ftemp, fagrup, minSeccion, izFactorMaterial);
-  const porVd = seccionPorCaidaTension(ib, V, long, trifasico, vdropMaxLocal, minSeccion, resistividad);
+// Recibe un objeto de opciones en lugar de once argumentos posicionales: así no
+// se pueden volver a olvidar parámetros por el camino (era el caso de la
+// calculadora de motor independiente, que perdía minSeccion y resistividad).
+// El primer argumento es la corriente que debe soportar el cable por criterio
+// térmico. Normalmente es la Ib de diseño, pero cuando el cable lo protege un
+// interruptor ya elegido hay que pasar su In, porque la condición del REBT es
+// Ib ≤ In ≤ Iz. En ese caso se pasa además `ibCaida` con la Ib real, que es la
+// corriente que de verdad circula y la que produce la caída de tensión: usar el
+// In para la ΔU sobredimensionaría el cable sin motivo.
+function calcularSeccionYVd(ib, opts){
+  const o = {
+    metodo: 'E',
+    aislamiento: aislamientoActual(),
+    nCargados: opts && opts.trifasico===false ? 2 : 3,
+    ftemp: 1, fagrup: 1,
+    V: 400, long: 0, trifasico: true,
+    vdropMax: 3,
+    minSeccion: SECCIONES[0],
+    material: 'cu',
+    izFactorMaterial: 1,
+    cosf: 1,
+    ...opts
+  };
+  if(o.resistividad === undefined) o.resistividad = resistividadDe(o.material, o.aislamiento);
+  o.nCargados = o.trifasico ? 3 : 2;
+  const ibVd = (o.ibCaida !== undefined) ? o.ibCaida : ib;
+
+  const porInt = seccionPorIntensidad(ib, o);
+  const porVd  = seccionPorCaidaTension(ibVd, o);
   const seccionFinal = Math.max(porInt.seccion, porVd.seccion);
-  const baseFinal = izSafe(metodo, seccionFinal);
-  const izFinal = baseFinal.valor*izFactorMaterial*ftemp*fagrup;
-  const vdFinal = trifasico
-    ? (Math.sqrt(3)*resistividad*long*ib)/(seccionFinal*V)*100
-    : (2*resistividad*long*ib)/(seccionFinal*V)*100;
+  const baseFinal = izSafe(o.metodo, seccionFinal, o.aislamiento, o.nCargados);
+  const izFinal = baseFinal.valor*(o.izFactorMaterial)*o.ftemp*o.fagrup;
   return {
     seccion: seccionFinal,
     izCorr: izFinal,
-    vd: vdFinal,
+    dimensionadoPara: ib,
+    ibReal: ibVd,
+    vd: caidaTension(ibVd, seccionFinal, o),
     insuficiente: !!(porInt.insuficiente || porVd.insuficiente),
     seccionPorIntensidad: porInt.seccion,
     izCorrPorIntensidad: porInt.izCorr,
     seccionPorCaidaTension: porVd.seccion,
     vdPorCaidaTension: porVd.vd,
     criterioDecisivo: porInt.seccion === porVd.seccion ? "ambos" : (seccionFinal === porInt.seccion ? "intensidad" : "caída de tensión"),
-    metodoSustituido: !!(porInt.sustituido || baseFinal.sustituido)
+    topeTabla: !!(porInt.topeTabla || baseFinal.topeTabla),
+    sinTabla: !!porInt.sinTabla,
+    forzadaPorTabla: !!porInt.forzadaPorTabla,
+    seccionesNoTabuladas: porInt.saltadas || [],
+    reactanciaRelevante: seccionFinal > 120,
+    aislamiento: o.aislamiento,
+    nCargados: o.nCargados
   };
 }
 
+// La condición Ib ≤ In ≤ Iz de la ITC-BT-22 actúa en la práctica como un TERCER
+// criterio de sección: puede ocurrir que una sección cumpla intensidad admisible
+// y caída de tensión pero no exista ningún calibre normalizado que quepa entre
+// la Ib y la Iz de ese cable (el calibre inferior no cubre la carga y el
+// superior se pasa de la Iz). En ese caso hay que subir sección, que es lo que
+// haría un proyectista, en vez de limitarse a avisar.
+function calcularConProteccion(ibDiseno, opts){
+  let elegido = calcularSeccionYVd(ibDiseno, opts);
+  let breaker = breakerRecomendado(ibDiseno, elegido.izCorr);
+  if(breaker.ok) return {elegido, breaker, subidaPorProteccion:null};
+
+  const partida = elegido.seccion;
+  const mayores = SECCIONES.filter(s => s > partida);
+  for(const s of mayores){
+    const prueba = calcularSeccionYVd(ibDiseno, {...opts, minSeccion:s});
+    const b = breakerRecomendado(ibDiseno, prueba.izCorr);
+    if(b.ok){
+      // Se conservan los dos parciales del cálculo ORIGINAL para no perder la
+      // traza de qué criterio mandaba antes de subir por coordinación; si no,
+      // la tabla mostraría ambos parciales igualados a la sección final y
+      // parecería que la decidió la intensidad o la caída de tensión.
+      const ajustado = {
+        ...prueba,
+        seccionPorIntensidad: elegido.seccionPorIntensidad,
+        izCorrPorIntensidad: elegido.izCorrPorIntensidad,
+        seccionPorCaidaTension: elegido.seccionPorCaidaTension,
+        vdPorCaidaTension: elegido.vdPorCaidaTension,
+        criterioDecisivo: 'coordinación con la protección'
+      };
+      return {elegido:ajustado, breaker:b, subidaPorProteccion:{desde:partida, hasta:prueba.seccion}};
+    }
+  }
+  // No hay ninguna sección que lo resuelva: se devuelve el cálculo original con
+  // su aviso, que ya explica que el magnetotérmico no queda coordinado.
+  return {elegido, breaker, subidaPorProteccion:null};
+}
+
 function calcular(){
-  const tAmb = parseFloat(document.getElementById('tAmb').value);
-  const tInt = parseFloat(document.getElementById('tInt').value);
-  const vdropMax = parseFloat(document.getElementById('vdropMax').value);
-  const margen24 = parseFloat(document.getElementById('margen24').value)/100;
-  const H = parseFloat(document.getElementById('dimH').value)/1000;
-  const W = parseFloat(document.getElementById('dimW').value)/1000;
-  const D = parseFloat(document.getElementById('dimD').value)/1000;
+  const errores = [];
+  const tAmb     = num('tAmb',     'Temperatura ambiente máxima (°C)',   {min:-20, max:80}, errores);
+  const tInt     = num('tInt',     'Temperatura interior máxima (°C)',   {min:-20, max:100}, errores);
+  const vdropMax = num('vdropMax', 'Caída de tensión máx. circuitos (%)',{mayorQueCero:true, max:20}, errores);
+  const margen24Pct = num('margen24','Margen de seguridad 24VDC (%)',    {min:0, max:200}, errores);
+  const Hmm = num('dimH', 'Alto del cuadro (mm)',  {mayorQueCero:true}, errores);
+  const Wmm = num('dimW', 'Ancho del cuadro (mm)', {mayorQueCero:true}, errores);
+  const Dmm = num('dimD', 'Fondo del cuadro (mm)', {mayorQueCero:true}, errores);
   const montajeFactor = parseFloat(document.getElementById('montaje').value);
 
-  const cosfGeneral = parseFloat(document.getElementById('cosfGeneral').value);
-  const distAcometida = parseFloat(document.getElementById('distAcometida').value);
+  const cosfGeneral   = num('cosfGeneral',  'cos φ medio del cuadro',            {mayorQueCero:true, max:1}, errores);
+  const distAcometida = num('distAcometida','Distancia de la acometida (m)',      {mayorQueCero:true}, errores);
   const metodoAcometida = document.getElementById('metodoAcometida').value;
-  const vdropAcomMax = parseFloat(document.getElementById('vdropAcomMax').value);
-  const sensGeneral = parseInt(document.getElementById('sensGeneral').value);
+  const vdropAcomMax  = num('vdropAcomMax', 'Caída de tensión máx. acometida (%)',{mayorQueCero:true, max:20}, errores);
+  const sensGeneral   = parseInt(document.getElementById('sensGeneral').value);
+  const longInterior24= num('longInterior24','Longitud cableado 24VDC interior (m)',{mayorQueCero:true}, errores);
 
-  const longInterior24 = parseFloat(document.getElementById('longInterior24').value);
+  if(tInt <= tAmb) errores.push('La temperatura interior máxima admisible debe ser mayor que la temperatura ambiente');
 
-  const ftemp = factorTemp(tAmb);
+  const filas = document.querySelectorAll('#tbodyPotencia tr');
+  if(!filas.length) errores.push('No hay ningún circuito de potencia en la lista');
+
+  // Validación de cada fila de circuito antes de calcular nada
+  filas.forEach((tr,i)=>{
+    const et = 'Circuito '+(i+1)+' ('+(tr.querySelector('.c-nombre').value||'sin nombre')+')';
+    numEl(tr.querySelector('.c-pot'),  et+' → potencia (kW)',  {mayorQueCero:true}, errores);
+    numEl(tr.querySelector('.c-cosf'), et+' → cos φ',          {mayorQueCero:true, max:1}, errores);
+    numEl(tr.querySelector('.c-eta'),  et+' → rendimiento (%)',{mayorQueCero:true, max:100}, errores);
+    numEl(tr.querySelector('.c-long'), et+' → longitud (m)',   {mayorQueCero:true}, errores);
+    numEl(tr.querySelector('.c-agrup'),et+' → circuitos agrupados', {min:1}, errores);
+    numEl(tr.querySelector('.c-calor'),et+' → % de calor',     {min:0, max:100}, errores);
+  });
+  document.querySelectorAll('#tbody24v tr').forEach((tr,i)=>{
+    const et = 'Elemento 24VDC '+(i+1);
+    numEl(tr.querySelector('.e-cant'),   et+' → cantidad',            {min:1}, errores);
+    numEl(tr.querySelector('.e-consumo'),et+' → consumo unitario (W)',{mayorQueCero:true}, errores);
+  });
+  if(document.getElementById('hayDistribuidor').checked){
+    num('longGenDist','Longitud interruptor general → distribuidor (m)',{mayorQueCero:true}, errores);
+    num('longDistCirc','Longitud distribuidor → cada circuito (m)',    {mayorQueCero:true}, errores);
+  }else{
+    num('longGenCirc','Longitud interruptor general → cada circuito (m)',{mayorQueCero:true}, errores);
+  }
+
+  mostrarErrores(errores, 'errores');
+  if(errores.length){ document.getElementById('results').style.display='none'; return; }
+
+  MARGEN_SEGURIDAD_IZ = parseFloat(document.getElementById('margenIz').value) || 0.94;
+  const aisl = aislamientoActual();
+  const margen24 = margen24Pct/100;
+  const H = Hmm/1000, W = Wmm/1000, D = Dmm/1000;
+  const ftemp = factorTemp(tAmb, aisl);
+
+  // Aviso si el ΔU pedido supera el límite legal de la ITC-BT-19 §2.2.2
+  const limVd = limiteVdropLegal();
+  const avisosGlobales = [];
+  if(vdropMax > limVd.fuerza) avisosGlobales.push(`La caída de tensión máxima fijada para los circuitos (${vdropMax}%) supera el límite legal de la ITC-BT-19 apartado 2.2.2 para este tipo de suministro (${limVd.fuerza}% en usos distintos del alumbrado).`);
+  if(vdropAcomMax > limVd.fuerza) avisosGlobales.push(`La caída de tensión máxima fijada para la acometida (${vdropAcomMax}%) supera el límite legal aplicable (${limVd.fuerza}%).`);
 
   // --- Circuitos de potencia ---
-  const filas = document.querySelectorAll('#tbodyPotencia tr');
   const tbodyRes = document.getElementById('tbodyResCircuitos');
   tbodyRes.innerHTML = '';
   let potenciaTotalW = 0;       // suma de potencias nominales (placa)
@@ -1100,7 +1556,8 @@ function calcular(){
   let ibMotorMayor = 0;         // mayor Ib real entre motores/variadores (para margen de arranque del conjunto)
   let potElecMotorMayorW = 0;   // consumo eléctrico real de ese motor mayor
   let nombreMotorMayor = "";
-  const circuitosCalculados = []; // {nombre, ib, ibDiseno} de cada circuito, para el cableado interior
+  const circuitosCalculados = []; // {nombre, ib, ibDiseno, cosf, trifasico} para el cableado interior
+  const avisosCircuitos = [];     // avisos por circuito (tope de tabla, breaker sin calibre válido...)
 
   const margenArranqueOn = document.getElementById('margenArranque').checked;
   const seccionMinPracticaOn = document.getElementById('seccionMinPractica').checked;
@@ -1144,27 +1601,37 @@ function calcular(){
     }
 
     const fagrup = factorAgrupamiento(agrup);
-    const elegido = calcularSeccionYVd(ibDiseno, metodo, ftemp, fagrup, V, long, alim!=='mono230', vdropMax, minSeccionPotencia);
-    const breaker = breakerRecomendado(ibDiseno, elegido.izCorr);
+    const trifasico = alim!=='mono230';
+    const {elegido, breaker, subidaPorProteccion} = calcularConProteccion(ibDiseno, {
+      metodo, aislamiento:aisl, ftemp, fagrup,
+      V, long, trifasico, vdropMax, minSeccion:minSeccionPotencia, cosf, material:'cu'
+    });
     const guardamotor = pickGuardamotor(ib); // el guardamotor se ajusta a la Ib real, no a la de diseño
     const curva = esMotor ? "D (motor)" : "C (estándar)";
+    let avisoFila = avisosDeSeccion(elegido, breaker, metodo, aisl);
+    if(subidaPorProteccion){
+      avisoFila += `<div class="step step-aviso"><span class="step-num">i</span><span>Sección subida de ${subidaPorProteccion.desde} a <strong>${subidaPorProteccion.hasta} mm²</strong> por coordinación con la protección: con ${subidaPorProteccion.desde} mm² no existía ningún calibre normalizado que cumpliese Ib ≤ In ≤ Iz (ITC-BT-22). No la ha decidido la intensidad admisible ni la caída de tensión.</span></div>`;
+    }
+    if(avisoFila) avisosCircuitos.push({nombre, html:avisoFila});
 
     const tr2 = document.createElement('tr');
     tr2.innerHTML = `
-      <td data-label="Circuito">${nombre}</td>
+      <td data-label="Circuito">${esc(nombre)}</td>
       <td data-label="Ib motor (A)">${ib.toFixed(1)}</td>
       <td data-label="Ib diseño cable (A)">${ibDiseno.toFixed(1)}${esMotor && margenArranqueOn?' <span class="status-warn">(+25%)</span>':''}</td>
       <td data-label="Sección por intensidad">${elegido.seccionPorIntensidad} mm² <span class="sub-inline">(Iz ${elegido.izCorrPorIntensidad.toFixed(1)} A)</span></td>
       <td data-label="Sección por caída U">${elegido.seccionPorCaidaTension} mm² <span class="sub-inline">(${elegido.vdPorCaidaTension.toFixed(2)}%)</span></td>
       <td data-label="Sección final"><strong>${elegido.seccion} mm²</strong>${elegido.insuficiente?' <span class="status-bad">⚠</span>':''} <span class="sub-inline">(${elegido.criterioDecisivo})</span></td>
-      <td data-label="Iz corr. (A)">${elegido.izCorr.toFixed(1)}</td>
+      <td data-label="Iz corr. (A)">${elegido.izCorr.toFixed(1)} <span class="sub-inline">(${aisl}, ${elegido.nCargados} cond.)</span></td>
       <td data-label="Caída U (%)" class="${elegido.vd>vdropMax?'status-bad':'status-ok'}">${elegido.vd.toFixed(2)}%</td>
       <td data-label="Curva">${curva} <button class="info-btn no-print" onclick="showInfo('curvaMotor')">?</button></td>
-      <td data-label="Magnetotérmico">${breaker} A</td>
-      <td data-label="Guardamotor">${guardamotor} <button class="info-btn no-print" onclick="showInfo('guardamotor')">?</button></td>
+      <td data-label="Magnetotérmico">${breaker.valor} A${breaker.ok?'':' <span class="status-bad">⚠</span>'}</td>
+      <td data-label="Guardamotor">${esMotor?guardamotor:'—'} <button class="info-btn no-print" onclick="showInfo('guardamotor')">?</button></td>
       <td data-label="Calor al cuadro">${calorAporte.toFixed(0)} W</td>
     `;
-    circuitosCalculados.push({nombre, ib, ibDiseno});
+    circuitosCalculados.push({nombre, ib, ibDiseno, cosf, trifasico,
+      tipo, potKW, alim, eta, long, metodo, agrup, elegido, breaker, guardamotor, curva,
+      esMotor, calorAporte});
     tbodyRes.appendChild(tr2);
   });
 
@@ -1231,20 +1698,44 @@ function calcular(){
 
   const ftempAcom = ftemp; // misma temperatura ambiente
   const modoEstrictoLGA = document.getElementById('modoEstrictoLGA').checked;
-  let resistividadAcom = RESISTIVIDAD_CU;
+  let materialAcom = 'cu';
   let izFactorAcom = 1;
-  let minSeccionAcom = SECCIONES[0];
+  // La sección mínima práctica industrial se aplica también a la acometida:
+  // antes solo afectaba a los circuitos, y podía salir una acometida de
+  // 1,5 mm² para el cuadro completo.
+  let minSeccionAcom = minSeccionPotencia;
   let etiquetaCriterio = "";
   if(modoEstrictoLGA){
     const tramo = document.getElementById('tramoTipo').value;
-    const material = document.getElementById('materialAcom').value;
-    resistividadAcom = material==='cu' ? (1/44) : (1/27); // γ=44 Cu / γ=27 Al según REBT
-    izFactorAcom = material==='cu' ? 1 : 0.78; // reducción aproximada de ampacidad en aluminio
-    if(tramo==='acometida'){ minSeccionAcom = material==='cu' ? 10 : 16; }
-    else { minSeccionAcom = material==='cu' ? 6 : 10; }
-    etiquetaCriterio = ` · modo estricto ${tramo==='acometida'?'acometida':'LGA'} (${material==='cu'?'Cu, γ=44':'Al, γ=27'}), mínimo absoluto ${minSeccionAcom} mm²`;
+    materialAcom = document.getElementById('materialAcom').value;
+    izFactorAcom = materialAcom==='cu' ? 1 : 0.78; // reducción aproximada de ampacidad en aluminio
+    if(tramo==='acometida'){ minSeccionAcom = materialAcom==='cu' ? 10 : 16; }
+    else { minSeccionAcom = materialAcom==='cu' ? 6 : 10; }
+    etiquetaCriterio = ` · modo estricto ${tramo==='acometida'?'acometida':'LGA'} (${materialAcom==='cu'?'Cu':'Al'}, ρ=${resistividadDe(materialAcom, aisl).toFixed(5)}), mínimo absoluto ${minSeccionAcom} mm²`;
   }
-  const elegidoAcom = calcularSeccionYVd(ibGeneral, metodoAcometida, ftempAcom, 1, 400, distAcometida, true, vdropAcomMax, minSeccionAcom, resistividadAcom, izFactorAcom);
+  // La resistividad ya no se fija a mano: sale del material y del aislamiento
+  // (PVC 70°C / XLPE 90°C), que es lo que determina la temperatura de servicio.
+  //
+  // IMPORTANTE: el cable se dimensiona contra el In del interruptor general, no
+  // contra la Ib. La condición del REBT (ITC-BT-22 / IEC 60364-4-43) es
+  // Ib ≤ In ≤ Iz: quien decide la protección del cable frente a sobrecarga es el
+  // calibre del interruptor, no la corriente de servicio. Antes se dimensionaba
+  // con ibGeneral y el interruptor se elegía después por separado, así que con
+  // la carga justo por encima de un escalón de calibre el cable podía quedar con
+  // Iz < In, es decir, sin protección efectiva.
+  const elegidoAcom = calcularSeccionYVd(breakerGeneral, {
+    metodo:metodoAcometida, aislamiento:aisl, ftemp:ftempAcom, fagrup:1,
+    V:400, long:distAcometida, trifasico:true, vdropMax:vdropAcomMax,
+    minSeccion:minSeccionAcom, material:materialAcom, izFactorMaterial:izFactorAcom,
+    cosf:cosfGeneral, ibCaida:ibGeneral
+  });
+  // Verificación explícita de la coordinación cable–protección en el tramo
+  // general. Con el dimensionado contra In debería cumplirse siempre, pero si la
+  // sección topa con el final de la tabla puede no llegar, y entonces hay que
+  // decirlo: un cable con Iz < In no está protegido frente a sobrecarga.
+  if(elegidoAcom.izCorr < breakerGeneral){
+    avisosGlobales.push(`Coordinación cable–protección de la acometida: la Iz corregida del cable (${elegidoAcom.izCorr.toFixed(1)} A) es <strong>inferior al calibre del interruptor general</strong> (${breakerGeneral} A), por lo que no queda protegido frente a sobrecarga (ITC-BT-22: Ib ≤ In ≤ Iz). Hay que subir sección, mejorar el método de instalación o repartir la alimentación.`);
+  }
   document.getElementById('resSeccionAcometida').textContent = elegidoAcom.seccion+" mm²"+(elegidoAcom.insuficiente?' ⚠':'');
   document.getElementById('resSeccionAcometidaSub').innerHTML =
     `Por intensidad: <strong>${elegidoAcom.seccionPorIntensidad} mm²</strong> (Iz ${elegidoAcom.izCorrPorIntensidad.toFixed(1)} A) · `+
@@ -1259,7 +1750,7 @@ function calcular(){
   // Método B2 (canaleta ranurada con tapa) y temperatura INTERIOR del cuadro (no la ambiente
   // exterior), que es el entorno térmico real en el que vive el cableado interno.
   const metodoInterior = 'B2';
-  const ftempInterior = factorTemp(tInt);
+  const ftempInterior = factorTemp(tInt, aisl);
   const hayDistribuidorOn = document.getElementById('hayDistribuidor').checked;
   const minSeccionInterior = minSeccionPotencia; // mismo criterio de mínimo práctico que el resto de potencia
 
@@ -1267,7 +1758,12 @@ function calcular(){
 
   if(hayDistribuidorOn){
     const longGenDist = parseFloat(document.getElementById('longGenDist').value);
-    const elegidoGenDist = calcularSeccionYVd(ibGeneral, metodoInterior, ftempInterior, 1, 400, longGenDist, true, vdropMax, minSeccionInterior);
+    // También lo protege el interruptor general: se dimensiona contra su In.
+    const elegidoGenDist = calcularSeccionYVd(breakerGeneral, {
+      metodo:metodoInterior, aislamiento:aisl, ftemp:ftempInterior, fagrup:1,
+      V:400, long:longGenDist, trifasico:true, vdropMax, minSeccion:minSeccionInterior,
+      cosf:cosfGeneral, material:'cu', ibCaida:ibGeneral
+    });
     document.getElementById('resCableGenDist').textContent = elegidoGenDist.seccion+" mm²"+(elegidoGenDist.insuficiente?' ⚠':'');
     document.getElementById('resCableGenDistSub').innerHTML =
       `Por intensidad: <strong>${elegidoGenDist.seccionPorIntensidad} mm²</strong> · Por caída U: <strong>${elegidoGenDist.seccionPorCaidaTension} mm²</strong> (decisivo: ${elegidoGenDist.criterioDecisivo})<br>`+
@@ -1280,11 +1776,20 @@ function calcular(){
 
   const tbodyCableInterior = document.getElementById('tbodyCableInterior');
   tbodyCableInterior.innerHTML = '';
+  const interioresCalculados = [];
   circuitosCalculados.forEach(c=>{
-    const seg = calcularSeccionYVd(c.ibDiseno, metodoInterior, ftempInterior, 1, 400, longPorCircuito, true, vdropMax, minSeccionInterior);
+    // Cada tramo interior lo protege el magnetotérmico de su circuito: se
+    // dimensiona contra el In de ese magnetotérmico (Ib ≤ In ≤ Iz), y la caída
+    // de tensión con la Ib real que circula.
+    const seg = calcularSeccionYVd(c.breaker.valor, {
+      metodo:metodoInterior, aislamiento:aisl, ftemp:ftempInterior, fagrup:1,
+      V:c.trifasico?400:230, long:longPorCircuito, trifasico:c.trifasico,
+      vdropMax, minSeccion:minSeccionInterior, cosf:c.cosf, material:'cu',
+      ibCaida:c.ibDiseno
+    });
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td data-label="Circuito">${c.nombre}</td>
+      <td data-label="Circuito">${esc(c.nombre)}</td>
       <td data-label="Ib diseño (A)">${c.ibDiseno.toFixed(1)}</td>
       <td data-label="Longitud (m)">${longPorCircuito}</td>
       <td data-label="Sección">${seg.seccion} mm²${seg.insuficiente?' <span class="status-bad">⚠</span>':''}</td>
@@ -1292,11 +1797,17 @@ function calcular(){
       <td data-label="Caída U (%)" class="${seg.vd>vdropMax?'status-bad':'status-ok'}">${seg.vd.toFixed(2)}%</td>
       <td data-label="Decisivo">${seg.criterioDecisivo}</td>
     `;
+    interioresCalculados.push({nombre:c.nombre, ibDiseno:c.ibDiseno, seg});
     tbodyCableInterior.appendChild(tr);
   });
 
   const vdrop24 = 3; // % admisible en tramos cortos de 24VDC
-  const elegidoInt24 = calcularSeccionYVd(corrienteFuente, metodoInterior, ftempInterior, 1, 24, longInterior24, false, vdrop24);
+  // Corriente continua: cos φ = 1 y dos conductores con carga.
+  const elegidoInt24 = calcularSeccionYVd(corrienteFuente, {
+    metodo:metodoInterior, aislamiento:aisl, ftemp:ftempInterior, fagrup:1,
+    V:24, long:longInterior24, trifasico:false, vdropMax:vdrop24,
+    minSeccion:SECCIONES[0], cosf:1, material:'cu'
+  });
   document.getElementById('resCableInterior24').textContent = elegidoInt24.seccion+" mm²";
   document.getElementById('resCableInterior24Sub').innerHTML =
     `Por intensidad: <strong>${elegidoInt24.seccionPorIntensidad} mm²</strong> · Por caída U: <strong>${elegidoInt24.seccionPorCaidaTension} mm²</strong> (decisivo: ${elegidoInt24.criterioDecisivo})<br>`+
@@ -1358,9 +1869,370 @@ function calcular(){
     nota.innerHTML = "El calor generado supera la disipación natural de la envolvente, pero el ΔT disponible permite ventilación forzada. Se recomienda instalar un ventilador con filtro en la parte baja y una salida de aire filtrada en la parte alta del cuadro.";
   }
 
-  document.getElementById('results').style.display = 'block';
-  document.getElementById('results').scrollIntoView({behavior:'smooth'});
+  // --- Avisos normativos y de cálculo ---
+  const cajaAvisos = document.getElementById('avisosCalculo');
+  const bloques = [];
+  if(avisosGlobales.length){
+    bloques.push(avisosGlobales.map(a=>`<div class="step step-aviso"><span class="step-num">⚠</span><span>${a}</span></div>`).join(''));
+  }
+  avisosCircuitos.forEach(a=>{
+    bloques.push(`<div class="aviso-grupo"><strong>${esc(a.nombre)}</strong>${a.html}</div>`);
+  });
+  const avAcom = avisosDeSeccion(elegidoAcom, null, metodoAcometida, aisl);
+  if(avAcom) bloques.push(`<div class="aviso-grupo"><strong>Acometida</strong>${avAcom}</div>`);
+  if(bloques.length){
+    cajaAvisos.style.display = 'block';
+    cajaAvisos.innerHTML = '<h3>Avisos</h3>'+bloques.join('');
+  }else{
+    cajaAvisos.style.display = 'none';
+    cajaAvisos.innerHTML = '';
+  }
+
+  // Se guarda todo el cálculo para poder generar después la memoria en PDF
+  // sin tener que releer la pantalla.
+  ultimoCalculo = {
+    fecha: new Date(),
+    entrada: {
+      Hmm, Wmm, Dmm, montajeFactor, tAmb, tInt, vdropMax, margen24Pct,
+      aisl, margenIz: MARGEN_SEGURIDAD_IZ,
+      tipoSuministro: document.getElementById('tipoSuministro').selectedOptions[0].textContent,
+      limiteVdrop: limVd,
+      cosfGeneral, distAcometida, metodoAcometida, vdropAcomMax, sensGeneral,
+      longInterior24, longPorCircuito, hayDistribuidorOn,
+      margenArranqueOn, seccionMinPracticaOn, minSeccionPotencia,
+      modoEstrictoLGA, materialAcom, minSeccionAcom, etiquetaCriterio
+    },
+    circuitos: circuitosCalculados,
+    interiores: interioresCalculados,
+    general: {
+      potenciaTotalW, potenciaElectricaW, potenciaEntradaFuenteW, potenciaBaseW,
+      extraArranqueW, potenciaGeneralElectricaW, ibGeneral, breakerGeneral,
+      rcdGeneral, nombreMotorMayor, ibMotorMayor
+    },
+    acometida: elegidoAcom,
+    v24: {consumo24Total, consumo24ConMargen, fuenteRecomendada, corrienteFuente,
+          iinFuente, protFuente, elegidoInt24, perdidasFuente},
+    termico: {calorCircuitosW, calorTotalW, Ae, deltaT, disipNatural,
+              ventilacion: document.getElementById('resVentilacion').textContent,
+              ventilacionSub: document.getElementById('resVentSub').textContent,
+              potAC: document.getElementById('resPotAC').textContent,
+              nota: document.getElementById('notaVentilacion').textContent},
+    avisos: {globales: avisosGlobales, circuitos: avisosCircuitos, acometida: avAcom}
+  };
+  document.getElementById('btnPDF').disabled = false;
+  // Se construye la memoria en cada cálculo, no solo al pulsar el botón: así
+  // Ctrl+P directo también imprime la memoria y nunca la interfaz.
+  construirInforme();
+
+  guardarEstado();
+  const res = document.getElementById('results');
+  res.style.display = 'block';
+  res.classList.remove('obsoleto');
+  res.scrollIntoView({behavior:'smooth'});
 }
+
+let ultimoCalculo = null;
+
+// ---------- MEMORIA DE CÁLCULO / EXPORTAR A PDF ----------
+// Se genera un documento propio en lugar de imprimir la interfaz: así el PDF
+// sale en blanco, con texto seleccionable, paginado y sin los campos de
+// formulario del tema oscuro.
+function f(n, d=2){ return (typeof n==='number' && isFinite(n)) ? n.toFixed(d) : '—'; }
+
+function tabla(cabeceras, filas){
+  return '<table class="inf-tabla"><thead><tr>'+
+    cabeceras.map(h=>`<th>${h}</th>`).join('')+
+    '</tr></thead><tbody>'+
+    filas.map(fl=>'<tr>'+fl.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')+
+    '</tbody></table>';
+}
+function pares(lista){
+  return '<table class="inf-tabla inf-pares"><tbody>'+
+    lista.filter(Boolean).map(([k,v])=>`<tr><th>${k}</th><td>${v}</td></tr>`).join('')+
+    '</tbody></table>';
+}
+
+function construirInforme(){
+  const c = ultimoCalculo;
+  if(!c) return false;
+  const e = c.entrada, g = c.general, v = c.v24, t = c.termico;
+  const ref = document.getElementById('refObra').value.trim() || '(sin referencia)';
+  const fecha = c.fecha.toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+  const hora = c.fecha.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+  const html = [];
+  // Numeración automática de apartados: si se añade o quita uno, el resto se
+  // renumera solo (antes estaba escrita a mano y se desajustaba).
+  let nSec = 0;
+  const sec = titulo => `<h2>${++nSec}. ${titulo}</h2>`;
+
+  html.push(`<div class="inf-cab">
+    <div class="inf-tit">Memoria de cálculo — Cuadro eléctrico industrial</div>
+    <div class="inf-sub">${esc(ref)}</div>
+    <div class="inf-meta">Generado el ${fecha} a las ${hora} · Cálculo según REBT (RD 842/2002), ITC-BT-19</div>
+  </div>`);
+
+  html.push(sec('Datos de partida'));
+  html.push(pares([
+    ['Dimensiones de la envolvente', `${e.Hmm} × ${e.Wmm} × ${e.Dmm} mm (alto × ancho × fondo)`],
+    ['Montaje', e.montajeFactor===1.8 ? 'Autoportante / de pie' : 'Mural adosado a pared'],
+    ['Temperatura ambiente máxima', `${e.tAmb} °C`],
+    ['Temperatura interior máxima admisible', `${e.tInt} °C`],
+    ['Aislamiento del conductor', e.aisl==='XLPE' ? 'Termoestable XLPE / EPR (90 °C)' : 'Termoplástico PVC (70 °C)'],
+    ['Resistividad aplicada', `${f(resistividadDe('cu', e.aisl), 5)} Ω·mm²/m (γ ≈ ${f(1/resistividadDe('cu', e.aisl), 1)})`],
+    ['Tipo de suministro', e.tipoSuministro],
+    ['Límite legal de ΔU (ITC-BT-19 §2.2.2)', `${e.limiteVdrop.fuerza}% fuerza / ${e.limiteVdrop.alumbrado}% alumbrado`],
+    ['ΔU máxima adoptada en circuitos', `${e.vdropMax}%`],
+    ['ΔU máxima adoptada en acometida', `${e.vdropAcomMax}%`],
+    ['cos φ medio del cuadro', e.cosfGeneral],
+    ['Distancia de la acometida', `${e.distAcometida} m`],
+    ['Método de instalación de la acometida', METODOS_INFO[e.metodoAcometida]],
+    ['Sensibilidad del diferencial general', `${e.sensGeneral} mA`]
+  ]));
+
+  html.push(sec('Criterios de dimensionado adoptados'));
+  html.push(pares([
+    ['Margen de seguridad sobre Iz de tabla', e.margenIz===1 ? '1,00 — Tabla 1 del REBT sin margen añadido' : `${String(e.margenIz).replace('.',',')} — margen propio, no normativo`],
+    ['Margen de arranque en motores', e.margenArranqueOn ? 'Sí — cable y magnetotérmico dimensionados a 1,25 × Ib' : 'No'],
+    ['Sección mínima práctica', e.seccionMinPracticaOn ? `Sí — ${e.minSeccionPotencia} mm² en circuitos de potencia y acometida` : 'No'],
+    ['Modo estricto acometida / LGA', e.modoEstrictoLGA ? `Sí — ${e.materialAcom==='cu'?'cobre':'aluminio'}, sección mínima absoluta ${e.minSeccionAcom} mm²` : 'No — alimentación interna de planta'],
+    ['Doble criterio de sección', 'Se adopta siempre la MAYOR entre la sección por intensidad admisible y la sección por caída de tensión']
+  ]));
+
+  // En A4 vertical no caben las 19 columnas en una sola tabla, así que se separa
+  // en datos de partida y resultado del cálculo.
+  html.push(sec('Circuitos de potencia — datos de partida'));
+  html.push(tabla(
+    ['Circuito','Tipo','P (kW)','Alimentación','cos φ','η (%)','L (m)','Método','Circ. agrup.'],
+    c.circuitos.map(x=>[
+      esc(x.nombre), x.tipo==='Variador de frecuencia'?'Variador':(x.esMotor?'Motor':'Carga'),
+      x.potKW, x.alim==='mono230'?'1~230 V':'3~400 V', x.cosf, f(x.eta*100,0), x.long,
+      x.metodo, x.agrup
+    ])
+  ));
+
+  html.push(sec('Circuitos de potencia — resultado del cálculo'));
+  html.push(tabla(
+    ['Circuito','Ib (A)','Ib diseño (A)','S int. (mm²)','S ΔU (mm²)','<strong>S final (mm²)</strong>','Decisivo','Iz corr. (A)','ΔU (%)','Magnet.','Curva','Guardamotor'],
+    c.circuitos.map(x=>[
+      esc(x.nombre), f(x.ib,1), f(x.ibDiseno,1),
+      x.elegido.seccionPorIntensidad, x.elegido.seccionPorCaidaTension,
+      `<strong>${x.elegido.seccion}</strong>${x.elegido.insuficiente?' ⚠':''}`,
+      x.elegido.criterioDecisivo,
+      f(x.elegido.izCorr,1), f(x.elegido.vd,2),
+      `${x.breaker.valor} A${x.breaker.ok?'':' ⚠'}`, x.curva,
+      x.esMotor ? x.guardamotor : '—'
+    ])
+  ));
+  html.push(`<p class="inf-nota">Intensidades admisibles: Tabla 1 de la ITC-BT-19, conductor de cobre, aislamiento ${e.aisl}, a 40 °C, con factor de temperatura para ${e.tAmb} °C (${f(factorTemp(e.tAmb, e.aisl),3)}) y factor de agrupamiento según el número de circuitos indicado en cada fila. El número de conductores con carga se toma como 3 en trifásico y 2 en monofásico. Potencia total instalada: ${f(g.potenciaTotalW/1000)} kW · consumo eléctrico real: ${f(g.potenciaElectricaW/1000)} kW.</p>`);
+
+  html.push(sec('Alimentación general y acometida'));
+  html.push(pares([
+    ['Suma de cargas reales (circuitos + fuente 24 VDC)', `${f(g.potenciaBaseW/1000)} kW`],
+    g.extraArranqueW>0 ? ['Incremento del 25% por el motor mayor', `${esc(g.nombreMotorMayor)} (${f(g.ibMotorMayor,1)} A) → +${f(g.extraArranqueW/1000)} kW`] : null,
+    ['Potencia de diseño del conjunto', `${f(g.potenciaGeneralElectricaW/1000)} kW`],
+    ['Intensidad general de diseño', `${f(g.ibGeneral,1)} A a 400 V trifásico, cos φ ${e.cosfGeneral}`],
+    ['Interruptor general automático', `${g.breakerGeneral} A`],
+    ['Diferencial general', `${g.rcdGeneral} A / ${e.sensGeneral} mA`],
+    ['Corriente usada para dimensionar el cable', `${g.breakerGeneral} A — el In del interruptor general, no la Ib, según la condición Ib ≤ In ≤ Iz de la ITC-BT-22`],
+    ['Sección de la acometida por intensidad', `${c.acometida.seccionPorIntensidad} mm² (Iz corr. ${f(c.acometida.izCorrPorIntensidad,1)} A)`],
+    ['Sección de la acometida por caída de tensión', `${c.acometida.seccionPorCaidaTension} mm² (${f(c.acometida.vdPorCaidaTension,2)}%)`],
+    ['Sección adoptada para la acometida', `<strong>${c.acometida.seccion} mm²</strong> — criterio decisivo: ${c.acometida.criterioDecisivo}`],
+    ['ΔU resultante en la acometida', `${f(c.acometida.vd,2)}% sobre ${e.distAcometida} m (máx. ${e.vdropAcomMax}%), calculada con la Ib real de ${f(g.ibGeneral,1)} A`],
+    e.etiquetaCriterio ? ['Criterio adicional aplicado', esc(e.etiquetaCriterio.replace(/^\s*·\s*/,''))] : null
+  ]));
+
+  html.push(sec('Cableado interior del cuadro'));
+  html.push(`<p class="inf-nota">Método B2 (canaleta ranurada con tapa), corregido con la temperatura interior del cuadro (${e.tInt} °C, factor ${f(factorTemp(e.tInt, e.aisl),3)}). ${e.hayDistribuidorOn ? 'El interruptor general alimenta un distribuidor interior y de ahí salen las derivaciones.' : 'Cableado directo desde el interruptor general a cada circuito.'} Longitud media por circuito: ${e.longPorCircuito} m.</p>`);
+  html.push(tabla(
+    ['Circuito','Ib diseño (A)','S por intensidad','S por ΔU','<strong>S final (mm²)</strong>','Iz corr. (A)','ΔU (%)','Decisivo'],
+    c.interiores.map(x=>[
+      esc(x.nombre), f(x.ibDiseno,1), x.seg.seccionPorIntensidad, x.seg.seccionPorCaidaTension,
+      `<strong>${x.seg.seccion}</strong>${x.seg.insuficiente?' ⚠':''}`,
+      f(x.seg.izCorr,1), f(x.seg.vd,2), x.seg.criterioDecisivo
+    ])
+  ));
+
+  html.push(sec('Circuito de maniobra 24 VDC'));
+  html.push(pares([
+    ['Consumo real de los elementos', `${f(v.consumo24Total,1)} W`],
+    ['Margen de seguridad aplicado', `${e.margen24Pct}% → ${f(v.consumo24ConMargen,1)} W`],
+    ['Fuente de alimentación recomendada', `${v.fuenteRecomendada} W (≈ ${f(v.corrienteFuente,1)} A a 24 VDC)`],
+    ['Corriente de entrada de la fuente', `${f(v.iinFuente,2)} A a 230 V (rendimiento asumido 0,85)`],
+    ['Magnetotérmico de entrada de la fuente', `${v.protFuente} A, curva C`],
+    ['Sección del cableado interior de 24 VDC', `${v.elegidoInt24.seccion} mm² sobre ${e.longInterior24} m (ΔU ${f(v.elegidoInt24.vd,2)}%)`]
+  ]));
+
+  html.push(sec('Balance térmico y ventilación'));
+  html.push(pares([
+    ['Calor aportado por los circuitos', `${f(t.calorCircuitosW,0)} W`],
+    ['Calor aportado por el circuito de 24 VDC', `${f(v.consumo24Total,0)} W + ${f(v.perdidasFuente,0)} W de pérdidas de la fuente`],
+    ['Calor total generado en el cuadro', `<strong>${f(t.calorTotalW,0)} W</strong>`],
+    ['Superficie efectiva de intercambio (IEC 60890)', `${f(t.Ae)} m²`],
+    ['Salto térmico disponible', `${f(t.deltaT,0)} K`],
+    ['Disipación natural de la envolvente', `${f(t.disipNatural,0)} W (k = 5,5 W/m²K)`],
+    ['Solución de climatización', `<strong>${t.ventilacion}</strong>`],
+    ['Potencia frigorífica del climatizador', t.potAC],
+    ['Detalle', t.ventilacionSub]
+  ]));
+  html.push(`<p class="inf-nota">${t.nota}</p>`);
+
+  const avisos = [];
+  c.avisos.globales.forEach(a=>avisos.push(a));
+  c.avisos.circuitos.forEach(a=>{
+    const limpio = a.html.replace(/<div class="step step-aviso"><span class="step-num">⚠<\/span><span>/g,'').replace(/<\/span><\/div>/g,'|');
+    limpio.split('|').filter(x=>x.trim()).forEach(x=>avisos.push(`<strong>${esc(a.nombre)}:</strong> ${x}`));
+  });
+  if(c.avisos.acometida){
+    const limpio = c.avisos.acometida.replace(/<div class="step step-aviso"><span class="step-num">⚠<\/span><span>/g,'').replace(/<\/span><\/div>/g,'|');
+    limpio.split('|').filter(x=>x.trim()).forEach(x=>avisos.push(`<strong>Acometida:</strong> ${x}`));
+  }
+  if(avisos.length){
+    html.push(sec('Avisos'));
+    html.push('<ul class="inf-avisos">'+avisos.map(a=>`<li>${a}</li>`).join('')+'</ul>');
+  }
+
+  html.push(sec('Referencias y limitaciones'));
+  html.push(`<ul class="inf-refs">
+    <li>Intensidades máximas admisibles: <strong>Tabla 1 del apartado 2.2.3 de la ITC-BT-19</strong> del Reglamento electrotécnico para baja tensión (Real Decreto 842/2002), texto consolidado del BOE. Conductor de cobre, valores a 40 °C.</li>
+    <li>Límites de caída de tensión: <strong>ITC-BT-19 apartado 2.2.2</strong>.</li>
+    <li>Factores de corrección por temperatura y por agrupamiento: la ITC-BT-19 remite a la <strong>UNE 20.460-5-523</strong>; se aplican los valores de esa norma, con los de agrupamiento en tubo o canaleta (caso más restrictivo) también para los métodos al aire.</li>
+    <li>Desde el 4 de abril de 2025 la ITC-BT-02 remite a <strong>UNE-HD 60364-5-52:2022 + A12:2023</strong> (Resolución de 20 de marzo de 2025, BOE-A-2025-6773; fin del periodo de coexistencia el 1 de octubre de 2025). Esa norma no es de acceso libre; este cálculo usa la Tabla 1 impresa en el REBT ${e.margenIz===1 ? 'sin margen añadido' : `con un margen propio de ${String(e.margenIz).replace('.',',')}`}.</li>
+    <li>El cálculo de caída de tensión es <strong>resistivo</strong>: desprecia la reactancia del conductor, aproximación admitida hasta unos 120 mm².</li>
+    <li><strong>No se comprueban</strong>: la resistencia al cortocircuito de los conductores (ITC-BT-22), la selectividad entre protecciones, las secciones de neutro y de protección, ni la puesta a tierra (ITC-BT-18).</li>
+    <li>Documento de apoyo al predimensionado. <strong>No sustituye a un proyecto firmado por técnico competente.</strong></li>
+  </ul>`);
+
+  document.getElementById('informe').innerHTML = html.join('');
+  return true;
+}
+
+function exportarPDF(){
+  if(!ultimoCalculo){ alert('Primero pulsa CALCULAR CUADRO para tener resultados que exportar.'); return; }
+  if(document.getElementById('results').classList.contains('obsoleto')){
+    if(!confirm('Has cambiado datos de entrada desde el último cálculo, así que el PDF saldría con los resultados anteriores.\n\n¿Quieres recalcular ahora y exportar los resultados actualizados?')){ return; }
+    calcular();
+    if(!ultimoCalculo || document.getElementById('results').style.display==='none') return;
+  }
+  if(!construirInforme()) return;
+  // No se toca ninguna clase del body: la hoja de impresión ya está preparada
+  // para imprimir SIEMPRE solo la memoria. Antes se activaba una clase justo
+  // antes de print() y se quitaba con un temporizador de respaldo de 1,5 s, que
+  // saltaba mientras el diálogo de impresión seguía abierto y hacía que el
+  // navegador volviese a maquetar la página entera.
+  window.print();
+}
+
+// ---------- PERSISTENCIA ----------
+// Antes no se guardaba nada: al refrescar se perdía toda la lista de circuitos.
+const CLAVE_ESTADO = 'calc_cuadros_estado_v1';
+const CAMPOS_GLOBALES = ['refObra','dimH','dimW','dimD','montaje','tAmb','tInt','vdropMax','margen24',
+  'aislamiento','margenIz','tipoSuministro','cosfGeneral','distAcometida','metodoAcometida',
+  'vdropAcomMax','sensGeneral','tramoTipo','esquemaContadores','materialAcom',
+  'longGenDist','longDistCirc','longGenCirc','longInterior24'];
+const CHECKS_GLOBALES = ['margenArranque','seccionMinPractica','hayDistribuidor','modoEstrictoLGA'];
+
+function guardarEstado(){
+  try{
+    const estado = {campos:{}, checks:{}, circuitos:[], elementos24:[]};
+    CAMPOS_GLOBALES.forEach(id=>{const el=document.getElementById(id); if(el) estado.campos[id]=el.value;});
+    CHECKS_GLOBALES.forEach(id=>{const el=document.getElementById(id); if(el) estado.checks[id]=el.checked;});
+    document.querySelectorAll('#tbodyPotencia tr').forEach(tr=>{
+      estado.circuitos.push({
+        nombre: tr.querySelector('.c-nombre').value,
+        tipo:   tr.querySelector('.c-tipo').value,
+        pot:    tr.querySelector('.c-pot').value,
+        alim:   tr.querySelector('.c-alim').value,
+        cosf:   tr.querySelector('.c-cosf').value,
+        eta:    tr.querySelector('.c-eta').value,
+        long:   tr.querySelector('.c-long').value,
+        metodo: tr.querySelector('.c-metodo').value,
+        agrup:  tr.querySelector('.c-agrup').value,
+        calor:  tr.querySelector('.c-calor').value
+      });
+    });
+    document.querySelectorAll('#tbody24v tr').forEach(tr=>{
+      estado.elementos24.push({
+        tipo:     tr.querySelector('.e-tipo').value,
+        cant:     tr.querySelector('.e-cant').value,
+        consumo:  tr.querySelector('.e-consumo').value,
+        especial: tr.querySelector('.e-especial').checked,
+        nota:     tr.querySelector('.e-nota').value
+      });
+    });
+    localStorage.setItem(CLAVE_ESTADO, JSON.stringify(estado));
+  }catch(e){ /* localStorage lleno o no disponible: no es crítico */ }
+}
+
+function restaurarEstado(){
+  let estado = null;
+  try{
+    const raw = localStorage.getItem(CLAVE_ESTADO);
+    if(raw) estado = JSON.parse(raw);
+  }catch(e){ estado = null; }
+  if(!estado || !estado.circuitos || !estado.circuitos.length) return false;
+
+  CAMPOS_GLOBALES.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && estado.campos && estado.campos[id]!==undefined) el.value = estado.campos[id];
+  });
+  CHECKS_GLOBALES.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el && estado.checks && estado.checks[id]!==undefined) el.checked = estado.checks[id];
+  });
+  document.getElementById('tbodyPotencia').innerHTML = '';
+  document.getElementById('tbody24v').innerHTML = '';
+  circuitoId = 0; elemento24Id = 0;
+  estado.circuitos.forEach(c=>{
+    // El método "B1" se llamaba así por error en versiones anteriores; en la
+    // Tabla 1 de la ITC-BT-19 el método es "B". "G2" no existe como método.
+    let m = c.metodo;
+    if(m==='B1') m='B';
+    if(m==='G2') m='G';
+    addCircuito(c.nombre, c.tipo, c.pot, c.alim, c.cosf, c.eta, c.long, m, c.agrup, c.calor);
+  });
+  (estado.elementos24||[]).forEach(e=>{
+    add24v(e.tipo, e.cant);
+    const tr = document.getElementById('el24_'+elemento24Id);
+    if(tr){
+      if(e.especial){ tr.querySelector('.e-especial').checked = true; toggleEspecial(elemento24Id); }
+      tr.querySelector('.e-consumo').value = e.consumo;
+      tr.querySelector('.e-nota').value = e.nota || '';
+    }
+  });
+  return true;
+}
+
+function borrarEstadoGuardado(){
+  try{ localStorage.removeItem(CLAVE_ESTADO); }catch(e){}
+  location.reload();
+}
+
+// ---------- ARRANQUE ----------
+// Estado inicial: lo último guardado en este navegador o, si no hay nada,
+// unas filas de ejemplo.
+if(!restaurarEstado()){
+  addCircuito("Cinta transportadora", "Variador de frecuencia", 4, "trif400", 0.9, 92, 20, "E", 2);
+  addCircuito("Bomba auxiliar", "Motor (fuera del cuadro)", 1.1, "trif400", 0.85, 88, 15, "E", 2);
+  add24v("Relé auxiliar", 6);
+  add24v("Fotocélula", 4);
+  add24v("Sensor inductivo", 8);
+  add24v("Electroválvula", 3);
+}
+toggleDistribuidor();
+toggleModoEstrictoLGA();
+actualizarLimiteVdrop();
+
+// Cualquier cambio en las entradas deja obsoletos los resultados en pantalla:
+// se atenúan con un aviso en lugar de quedarse como si siguieran siendo válidos.
+document.addEventListener('input', e=>{
+  if(e.target.closest('#results') || e.target.closest('#resultadoMotorIndependiente')) return;
+  marcarResultadosObsoletos();
+});
+document.addEventListener('change', e=>{
+  if(e.target.closest('#results') || e.target.closest('#resultadoMotorIndependiente')) return;
+  marcarResultadosObsoletos();
+  guardarEstado();
+});
 </script>
 </body>
 </html>
