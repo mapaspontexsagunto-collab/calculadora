@@ -447,6 +447,50 @@ tr.row-add td{padding-top:10px;}
   <div class="section" data-num="02">
     <h2>Alimentación general y acometida</h2>
     <div class="grid4">
+      <div class="field"><label>Cómo se calcula la acometida <button class="info-btn" onclick="showInfo('modoAcometida')">?</button></label>
+        <select id="modoAcometida" onchange="toggleModoAcometida()">
+          <option value="calc" selected>Desde los circuitos del cuadro (suma de cargas)</option>
+          <option value="planos">Según protección instalada + potencia de planos (máquina)</option>
+        </select>
+      </div>
+    </div>
+    <div id="camposPlanos" style="display:none;">
+      <h3>Datos de planos y protección del cuadro</h3>
+      <div class="grid4">
+        <div class="field"><label>Potencia según planos <button class="info-btn" onclick="showInfo('planosPotencia')">?</button></label><input type="number" id="planosValor" value="15" step="0.1"></div>
+        <div class="field"><label>Unidad <button class="info-btn" onclick="showInfo('planosPotencia')">?</button></label>
+          <select id="planosUnidad" onchange="toggleModoAcometida()">
+            <option value="kW" selected>kW (potencia activa)</option>
+            <option value="kVA">kVA (potencia aparente)</option>
+            <option value="A">A (intensidad)</option>
+          </select>
+        </div>
+        <div class="field"><label>Sistema de alimentación</label>
+          <select id="planosSistema">
+            <option value="trif400" selected>Trifásico 400 V</option>
+            <option value="mono230">Monofásico 230 V</option>
+          </select>
+        </div>
+        <div class="field"><label>cos φ <button class="info-btn" onclick="showInfo('planosPotencia')">?</button></label><input type="number" id="planosCosf" value="0.9" step="0.05"></div>
+      </div>
+      <div class="grid4">
+        <div class="field"><label>Uso / simultaneidad de la máquina (%) <button class="info-btn" onclick="showInfo('planosSimult')">?</button></label><input type="number" id="planosSimult" value="100" step="5"></div>
+        <div class="field"><label>Seccionador del cuadro (A) <button class="info-btn" onclick="showInfo('planosProtecciones')">?</button></label><input type="number" id="planosSeccionador" placeholder="opcional" step="1"></div>
+        <div class="field"><label>Térmico / magnetotérmico (A) <button class="info-btn" onclick="showInfo('planosProtecciones')">?</button></label><input type="number" id="planosTermico" placeholder="opcional" step="1"></div>
+        <div class="field"><label>Curva (opcional)</label>
+          <select id="planosCurva">
+            <option value="">No indicada</option>
+            <option value="B">B</option><option value="C">C</option><option value="D">D</option>
+            <option value="K">K</option><option value="Z">Z</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid4">
+        <div class="field"><label>Poder de corte (kA, opcional)</label><input type="number" id="planosPdC" placeholder="opcional" step="0.5"></div>
+      </div>
+      <div class="note">Hay que indicar al menos uno de los dos calibres (seccionador o térmico). El cable se protege con el <strong>térmico</strong>; si solo das el seccionador, se usa como referencia y se avisa de que un seccionador no protege contra sobrecargas. Distancia, método de instalación, caída de tensión y modo estricto LGA se toman de los campos de esta misma sección. La curva y el poder de corte se recogen en la memoria; esta calculadora no verifica el cortocircuito (necesita la Icc en cabecera).</div>
+    </div>
+    <div class="grid4" id="camposCalcCircuitos">
       <div class="field"><label>cos φ medio del cuadro <button class="info-btn" onclick="showInfo('cosfGeneral')">?</button></label><input type="number" id="cosfGeneral" value="0.9" step="0.05"></div>
       <div class="field"><label>Distancia acometida (m) <button class="info-btn" onclick="showInfo('distAcometida')">?</button></label><input type="number" id="distAcometida" value="20"></div>
       <div class="field"><label>Método instalación acometida <button class="info-btn" onclick="showInfo('metodo')">?</button></label>
@@ -818,6 +862,10 @@ const INFO_TEXTS = {
   tramoTipo: ["Tipo de tramo", "Acometida: desde la red de la compañía distribuidora hasta la Caja General de Protección (CGP). Línea General de Alimentación (LGA): desde la CGP hasta la centralización de contadores. Cada una tiene su propia sección mínima absoluta habitual (10 mm² Cu en acometida, 6 mm² Cu en LGA)."],
   esquemaContadores: ["Esquema de contadores", "Según ITC-BT-14, el límite de caída de tensión de la LGA depende de cómo estén los contadores: si están centralizados en varias ubicaciones, el límite es más estricto (0,5%); si están todos concentrados en un único punto, se permite hasta un 1%. Si no lo sabes, consulta el proyecto de la instalación o pregunta a la propiedad/administrador del edificio."],
   materialAcom: ["Material del conductor", "El REBT admite cobre o aluminio en acometidas y LGA. El aluminio es más económico y ligero pero tiene menor conductividad (γ=27 frente a γ=44 del cobre) y requiere secciones mayores para la misma intensidad y caída de tensión, además de secciones mínimas absolutas más altas. Si no lo sabes, usa cobre, que es lo más habitual en instalaciones de tamaño pequeño y medio."],
+  modoAcometida: ["Cómo se calcula la acometida", "Desde los circuitos: la intensidad general sale de sumar las cargas de la tabla de circuitos y el interruptor general se elige a partir de ella. Según protección + planos: partes de la potencia que figura en los planos de la máquina y de la protección que ya lleva el cuadro (seccionador y térmico), y la calculadora dimensiona el cable de acometida para esa protección, siguiendo la ITC-BT-22 (Ib ≤ In ≤ Iz) y los límites de caída de tensión del REBT."],
+  planosPotencia: ["Potencia según planos", "Indica la potencia de la máquina tal y como aparece en los planos, en kW (activa), kVA (aparente) o directamente en amperios. Con kW la intensidad es P/(√3·U·cos φ) en trifásico (P/(U·cos φ) en monofásico); con kVA es S/(√3·U); con A se usa tal cual. El cos φ también se emplea en el cálculo de la caída de tensión. Si no lo sabes, usa 0,9."],
+  planosSimult: ["Uso / simultaneidad de la máquina", "Porcentaje de la potencia de planos que la máquina usa realmente de forma continuada. 100% = toda la potencia a la vez (lo más seguro). La protección del cuadro no se modifica por este valor: solo cambia la Ib de servicio, que se usa para comprobar que la protección instalada es suficiente y para la caída de tensión."],
+  planosProtecciones: ["Seccionador y térmico", "Calibre en amperios de lo que lleva instalado el cuadro. El cable de acometida se dimensiona para que su intensidad admisible corregida (Iz) sea igual o mayor que el calibre del térmico (In), de modo que quede protegido frente a sobrecarga: Ib ≤ In ≤ Iz (ITC-BT-22, UNE-HD 60364-4-43). Si solo conoces el seccionador, se usa como referencia, pero un seccionador solo corta en carga y no protege contra sobrecarga ni cortocircuito: el cálculo indicará que falta el térmico. Curva y poder de corte son opcionales y quedan reflejados en la memoria."],
   criterioDoble: ["Doble criterio de sección", "Todo cable se dimensiona por dos caminos independientes: (1) por intensidad admisible, la sección mínima que soporta la corriente sin calentarse en exceso, según la tabla de intensidades y los factores de corrección; y (2) por caída de tensión, la sección mínima para que la pérdida de tensión en el tramo no supere el máximo admitido. La sección definitiva y real que hay que instalar es siempre la MAYOR de las dos — nunca puedes quedarte con la que te convenga, sino con la más exigente. Aquí se muestran los dos resultados parciales y cuál de ellos ha sido el decisivo."]
 };
 
@@ -1190,6 +1238,12 @@ function toggleDistribuidor(){
     : 'Cableado interruptor general → cada circuito (sin distribuidor)';
 }
 
+function toggleModoAcometida(){
+  const planos = document.getElementById('modoAcometida').value==='planos';
+  document.getElementById('camposPlanos').style.display = planos ? 'block' : 'none';
+  document.getElementById('camposCalcCircuitos').style.display = planos ? 'none' : 'grid';
+}
+
 function toggleModoEstrictoLGA(){
   const on = document.getElementById('modoEstrictoLGA').checked;
   document.getElementById('camposEstrictoLGA').style.display = on ? 'grid' : 'none';
@@ -1498,7 +1552,30 @@ function calcular(){
   const Dmm = num('dimD', 'Fondo del cuadro (mm)', {mayorQueCero:true}, errores);
   const montajeFactor = parseFloat(document.getElementById('montaje').value);
 
-  const cosfGeneral   = num('cosfGeneral',  'cos φ medio del cuadro',            {mayorQueCero:true, max:1}, errores);
+  const modoAcometida = document.getElementById('modoAcometida').value;
+  const planos = modoAcometida==='planos';
+  // En modo "planos" el cos φ del cuadro lo da el propio formulario de planos.
+  const cosfGeneral   = planos
+    ? num('planosCosf', 'cos φ (planos)', {mayorQueCero:true, max:1}, errores)
+    : num('cosfGeneral',  'cos φ medio del cuadro',            {mayorQueCero:true, max:1}, errores);
+  let planosDatos = null;
+  if(planos){
+    const unidad = document.getElementById('planosUnidad').value;
+    const valor  = num('planosValor', 'Potencia según planos ('+unidad+')', {mayorQueCero:true}, errores);
+    const simult = num('planosSimult', 'Uso / simultaneidad (%)', {mayorQueCero:true, max:100}, errores);
+    const opcional = (id, nombre) => {
+      const raw = document.getElementById(id).value.trim();
+      if(raw==='') return null;
+      return num(id, nombre, {mayorQueCero:true}, errores);
+    };
+    const secc = opcional('planosSeccionador', 'Seccionador (A)');
+    const term = opcional('planosTermico', 'Térmico (A)');
+    const pdc  = opcional('planosPdC', 'Poder de corte (kA)');
+    if(secc===null && term===null) errores.push('Indica al menos el calibre del seccionador o del térmico (A)');
+    planosDatos = {unidad, valor, simult, secc, term, pdc,
+      sistema: document.getElementById('planosSistema').value,
+      curva: document.getElementById('planosCurva').value};
+  }
   const distAcometida = num('distAcometida','Distancia de la acometida (m)',      {mayorQueCero:true}, errores);
   const metodoAcometida = document.getElementById('metodoAcometida').value;
   const vdropAcomMax  = num('vdropAcomMax', 'Caída de tensión máx. acometida (%)',{mayorQueCero:true, max:20}, errores);
@@ -1674,9 +1751,39 @@ function calcular(){
   const potenciaBaseW = potenciaElectricaW + potenciaEntradaFuenteW; // TODAS las cargas, incl. control 24VDC
   const extraArranqueW = (margenArranqueOn && ibMotorMayor > 0) ? potElecMotorMayorW * 0.25 : 0;
   const potenciaGeneralElectricaW = potenciaBaseW + extraArranqueW;
-  const ibGeneral = potenciaGeneralElectricaW/(Math.sqrt(3)*400*cosfGeneral);
-  const breakerGeneral = pickGeneralBreaker(ibGeneral);
+  let ibGeneral = potenciaGeneralElectricaW/(Math.sqrt(3)*400*cosfGeneral);
+  let breakerGeneral = pickGeneralBreaker(ibGeneral);
+  // Modo "planos": la Ib sale de la potencia de planos y la protección es la
+  // instalada (térmico; si no hay, el seccionador como referencia).
+  let Vacom = 400, trifAcom = true, infoPlanos = null;
+  if(planos){
+    const d = planosDatos;
+    trifAcom = d.sistema==='trif400';
+    Vacom = trifAcom ? 400 : 230;
+    const k = trifAcom ? Math.sqrt(3) : 1;
+    const frac = d.simult/100;
+    let ibNominal;
+    if(d.unidad==='kW')       ibNominal = d.valor*1000/(k*Vacom*cosfGeneral);
+    else if(d.unidad==='kVA') ibNominal = d.valor*1000/(k*Vacom);
+    else                      ibNominal = d.valor;
+    ibGeneral = ibNominal*frac;
+    const minRecomendado = pickGeneralBreaker(ibGeneral);
+    const sinTermico = d.term===null;
+    breakerGeneral = sinTermico ? d.secc : d.term;
+    infoPlanos = {...d, trifAcom, Vacom, ibNominal, minRecomendado, sinTermico};
+    const fmtN = n => (Number.isInteger(n) ? n : n.toFixed(1));
+    if(sinTermico) avisosGlobales.push(`Solo se ha indicado el seccionador (${fmtN(d.secc)} A): se usa como referencia para dimensionar el cable, pero un seccionador <strong>no protege</strong> contra sobrecargas ni cortocircuitos. Falta el térmico/magnetotérmico para cumplir la ITC-BT-22.`);
+    if(d.secc!==null && d.term!==null && d.secc < d.term) avisosGlobales.push(`El seccionador (${fmtN(d.secc)} A) es de menor calibre que el térmico (${fmtN(d.term)} A): el seccionador debe soportar al menos la intensidad del térmico.`);
+    if(breakerGeneral < ibGeneral) avisosGlobales.push(`<strong>Protección insuficiente:</strong> la Ib de la máquina según planos (${ibGeneral.toFixed(1)} A) supera el calibre de la protección (${fmtN(breakerGeneral)} A). La ITC-BT-22 exige Ib ≤ In: el calibre mínimo normalizado sería ${minRecomendado} A.`);
+    else if(breakerGeneral > 2*ibGeneral && breakerGeneral > 16) avisosGlobales.push(`La protección (${fmtN(breakerGeneral)} A) es más del doble de la Ib de planos (${ibGeneral.toFixed(1)} A): el cable de acometida saldrá sobredimensionado para esa protección. Revisa si el calibre o la potencia de planos son correctos.`);
+    if(!BREAKERS_GENERAL.includes(breakerGeneral)) avisosGlobales.push(`El calibre ${fmtN(breakerGeneral)} A no es un valor normalizado habitual; compruébalo en el esquema.`);
+  }
   document.getElementById('resBreakerGeneral').textContent = breakerGeneral+" A";
+  if(planos){
+    document.getElementById('resBreakerGeneralSub').innerHTML =
+      `Protección instalada según cuadro (${infoPlanos.sinTermico?'seccionador':'térmico'})${infoPlanos.curva?`, curva ${infoPlanos.curva}`:''}${infoPlanos.pdc?`, ${infoPlanos.pdc} kA`:''}<br>`+
+      `Ib de planos ≈ <strong>${ibGeneral.toFixed(1)} A</strong> (${infoPlanos.valor} ${infoPlanos.unidad}${infoPlanos.unidad==='A'?'':` a ${Vacom} V ${trifAcom?'trif.':'mono.'}, cos φ ${cosfGeneral}`}${infoPlanos.simult<100?`, uso ${infoPlanos.simult}%`:''}) · calibre mínimo normalizado: ${infoPlanos.minRecomendado} A`;
+  }else
   document.getElementById('resBreakerGeneralSub').innerHTML =
     `Ib general de diseño ≈ <strong>${ibGeneral.toFixed(1)} A</strong> a 400V trif., cos φ ${cosfGeneral}<br>`+
     `= Σ cargas reales (circuitos + 24VDC): ${(potenciaBaseW/1000).toFixed(2)} kW`+
@@ -1684,6 +1791,14 @@ function calcular(){
     ` = ${(potenciaGeneralElectricaW/1000).toFixed(2)} kW`;
 
   const rcdGeneral = pickRCD(breakerGeneral);
+  if(planos){
+    const ip = infoPlanos;
+    document.getElementById('cascadaGeneral').innerHTML = `
+    <div class="step"><span class="step-num">1</span><span>Potencia según planos: <strong>${ip.valor} ${ip.unidad}</strong>${ip.unidad==='A'?'':` a ${ip.Vacom} V ${ip.trifAcom?'trifásico':'monofásico'}${ip.unidad==='kW'?`, cos φ ${cosfGeneral}`:''}`} → ${ip.ibNominal.toFixed(1)} A</span></div>
+    <div class="step"><span class="step-num">2</span><span>Uso/simultaneidad de la máquina ${ip.simult}% → <strong>Ib = ${ibGeneral.toFixed(1)} A</strong></span></div>
+    <div class="step"><span class="step-num">3</span><span>Protección instalada: ${ip.secc!==null?`seccionador ${ip.secc} A`:'sin seccionador indicado'} · ${ip.term!==null?`térmico ${ip.term} A`:'sin térmico indicado'}${ip.curva?` · curva ${ip.curva}`:''}${ip.pdc?` · PdC ${ip.pdc} kA`:''}</span></div>
+    <div class="step step-total"><span class="step-num">=</span><span>In = ${breakerGeneral} A (Ib ${ibGeneral.toFixed(1)} A ≤ In) → diferencial ${rcdGeneral} A / ${sensGeneral} mA → cable con Iz ≥ ${breakerGeneral} A y ΔU ≤ ${vdropAcomMax}% (ver tarjeta)</span></div>`;
+  }else
   document.getElementById('cascadaGeneral').innerHTML = `
     <div class="step"><span class="step-num">1</span><span>Suma de consumo eléctrico real de los ${filas.length} circuitos de potencia: <strong>${(potenciaElectricaW/1000).toFixed(2)} kW</strong></span></div>
     <div class="step"><span class="step-num">2</span><span>+ Consumo de entrada de la fuente 24VDC (control/maniobra): <strong>${(potenciaEntradaFuenteW/1000).toFixed(2)} kW</strong></span></div>
@@ -1725,7 +1840,7 @@ function calcular(){
   // Iz < In, es decir, sin protección efectiva.
   const elegidoAcom = calcularSeccionYVd(breakerGeneral, {
     metodo:metodoAcometida, aislamiento:aisl, ftemp:ftempAcom, fagrup:1,
-    V:400, long:distAcometida, trifasico:true, vdropMax:vdropAcomMax,
+    V:Vacom, long:distAcometida, trifasico:trifAcom, vdropMax:vdropAcomMax,
     minSeccion:minSeccionAcom, material:materialAcom, izFactorMaterial:izFactorAcom,
     cosf:cosfGeneral, ibCaida:ibGeneral
   });
@@ -1734,7 +1849,7 @@ function calcular(){
   // sección topa con el final de la tabla puede no llegar, y entonces hay que
   // decirlo: un cable con Iz < In no está protegido frente a sobrecarga.
   if(elegidoAcom.izCorr < breakerGeneral){
-    avisosGlobales.push(`Coordinación cable–protección de la acometida: la Iz corregida del cable (${elegidoAcom.izCorr.toFixed(1)} A) es <strong>inferior al calibre del interruptor general</strong> (${breakerGeneral} A), por lo que no queda protegido frente a sobrecarga (ITC-BT-22: Ib ≤ In ≤ Iz). Hay que subir sección, mejorar el método de instalación o repartir la alimentación.`);
+    avisosGlobales.push(`Coordinación cable–protección de la acometida: la Iz corregida del cable (${elegidoAcom.izCorr.toFixed(1)} A) es <strong>inferior al calibre de la protección general</strong> (${breakerGeneral} A), por lo que no queda protegido frente a sobrecarga (ITC-BT-22: Ib ≤ In ≤ Iz). Hay que subir sección, mejorar el método de instalación o repartir la alimentación.`);
   }
   document.getElementById('resSeccionAcometida').textContent = elegidoAcom.seccion+" mm²"+(elegidoAcom.insuficiente?' ⚠':'');
   document.getElementById('resSeccionAcometidaSub').innerHTML =
@@ -1900,7 +2015,8 @@ function calcular(){
       cosfGeneral, distAcometida, metodoAcometida, vdropAcomMax, sensGeneral,
       longInterior24, longPorCircuito, hayDistribuidorOn,
       margenArranqueOn, seccionMinPracticaOn, minSeccionPotencia,
-      modoEstrictoLGA, materialAcom, minSeccionAcom, etiquetaCriterio
+      modoEstrictoLGA, materialAcom, minSeccionAcom, etiquetaCriterio,
+      modoAcometida, infoPlanos
     },
     circuitos: circuitosCalculados,
     interiores: interioresCalculados,
@@ -2026,7 +2142,22 @@ function construirInforme(){
   html.push(`<p class="inf-nota">Intensidades admisibles: Tabla 1 de la ITC-BT-19, conductor de cobre, aislamiento ${e.aisl}, a 40 °C, con factor de temperatura para ${e.tAmb} °C (${f(factorTemp(e.tAmb, e.aisl),3)}) y factor de agrupamiento según el número de circuitos indicado en cada fila. El número de conductores con carga se toma como 3 en trifásico y 2 en monofásico. Potencia total instalada: ${f(g.potenciaTotalW/1000)} kW · consumo eléctrico real: ${f(g.potenciaElectricaW/1000)} kW.</p>`);
 
   html.push(sec('Alimentación general y acometida'));
-  html.push(pares([
+  const ip = e.infoPlanos;
+  html.push(pares(ip ? [
+    ['Modo de cálculo', 'Según protección instalada y potencia de planos'],
+    ['Potencia según planos', `${ip.valor} ${ip.unidad}${ip.unidad==='A'?'':` — ${ip.Vacom} V ${ip.trifAcom?'trifásico':'monofásico'}${ip.unidad==='kW'?`, cos φ ${e.cosfGeneral}`:''}`}`],
+    ['Uso / simultaneidad de la máquina', `${ip.simult}%`],
+    ['Intensidad de servicio Ib', `${f(g.ibGeneral,1)} A`],
+    ['Seccionador del cuadro', ip.secc!==null ? `${ip.secc} A` : 'No indicado'],
+    ['Térmico / magnetotérmico', ip.term!==null ? `${ip.term} A${ip.curva?`, curva ${ip.curva}`:''}${ip.pdc?`, poder de corte ${ip.pdc} kA`:''}` : 'No indicado'],
+    ['Calibre de protección adoptado (In)', `${g.breakerGeneral} A — condición Ib ≤ In ≤ Iz de la ITC-BT-22`],
+    ['Diferencial general', `${g.rcdGeneral} A / ${e.sensGeneral} mA`],
+    ['Sección de la acometida por intensidad', `${c.acometida.seccionPorIntensidad} mm² (Iz corr. ${f(c.acometida.izCorrPorIntensidad,1)} A)`],
+    ['Sección de la acometida por caída de tensión', `${c.acometida.seccionPorCaidaTension} mm² (${f(c.acometida.vdPorCaidaTension,2)}%)`],
+    ['Sección adoptada para la acometida', `<strong>${c.acometida.seccion} mm²</strong> — criterio decisivo: ${c.acometida.criterioDecisivo}`],
+    ['ΔU resultante en la acometida', `${f(c.acometida.vd,2)}% sobre ${e.distAcometida} m (máx. ${e.vdropAcomMax}%), calculada con la Ib de ${f(g.ibGeneral,1)} A`],
+    e.etiquetaCriterio ? ['Criterio adicional aplicado', esc(e.etiquetaCriterio.replace(/^\s*·\s*/,''))] : null
+  ] : [
     ['Suma de cargas reales (circuitos + fuente 24 VDC)', `${f(g.potenciaBaseW/1000)} kW`],
     g.extraArranqueW>0 ? ['Incremento del 25% por el motor mayor', `${esc(g.nombreMotorMayor)} (${f(g.ibMotorMayor,1)} A) → +${f(g.extraArranqueW/1000)} kW`] : null,
     ['Potencia de diseño del conjunto', `${f(g.potenciaGeneralElectricaW/1000)} kW`],
@@ -2128,7 +2259,9 @@ const CLAVE_ESTADO = 'calc_cuadros_estado_v1';
 const CAMPOS_GLOBALES = ['refObra','dimH','dimW','dimD','montaje','tAmb','tInt','vdropMax','margen24',
   'aislamiento','margenIz','tipoSuministro','cosfGeneral','distAcometida','metodoAcometida',
   'vdropAcomMax','sensGeneral','tramoTipo','esquemaContadores','materialAcom',
-  'longGenDist','longDistCirc','longGenCirc','longInterior24'];
+  'longGenDist','longDistCirc','longGenCirc','longInterior24',
+  'modoAcometida','planosValor','planosUnidad','planosSistema','planosCosf','planosSimult',
+  'planosSeccionador','planosTermico','planosCurva','planosPdC'];
 const CHECKS_GLOBALES = ['margenArranque','seccionMinPractica','hayDistribuidor','modoEstrictoLGA'];
 
 function guardarEstado(){
@@ -2220,6 +2353,7 @@ if(!restaurarEstado()){
 }
 toggleDistribuidor();
 toggleModoEstrictoLGA();
+toggleModoAcometida();
 actualizarLimiteVdrop();
 
 // Cualquier cambio en las entradas deja obsoletos los resultados en pantalla:
