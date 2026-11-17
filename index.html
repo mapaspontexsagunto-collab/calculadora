@@ -563,6 +563,24 @@ tr.row-add td{padding-top:10px;}
     <div class="note" id="notaModoEstrictoLGA" style="display:none;">
       En este modo: el ΔU máximo se fija según el esquema de contadores (no es editable), la resistividad usada en la caída de tensión sale del material y del aislamiento elegidos (con XLPE y cobre equivale a γ≈44, el valor que cita el REBT), y se impone la sección mínima absoluta habitual (10 mm² Cu / 16 mm² Al, tanto en acometida como en LGA, según ITC-BT-14). La derivación de intensidad admisible en aluminio se estima aplicando un factor de reducción del 0,78 sobre la tabla de cobre (aproximación habitual; verifica con la tabla específica del fabricante). <strong>Esta calculadora no verifica el cortocircuito según ITC-BT-22</strong> (necesitarías la Icc en el punto de entronque y la curva del fusible de la CGP para esa comprobación) ni impone el aislamiento RZ1-K libre de halógenos exigido para estos tramos — ambas cosas debes confirmarlas aparte.
     </div>
+
+    <h3>Calcular solo la acometida</h3>
+    <div class="note">Calcula <strong>únicamente la acometida</strong> (fases, neutro y PE) con los datos de esta sección y los generales de «Datos del cuadro» (aislamiento, margen de seguridad, temperatura ambiente y tipo de suministro). No necesita circuitos, dimensiones, 24 VDC ni ventilación. Usa siempre el modo «Según protección instalada + potencia de planos».</div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap; margin:10px 0;">
+      <button class="btn primary" onclick="calcularAcometidaSola()">CALCULAR SOLO LA ACOMETIDA →</button>
+      <button class="btn" id="btnPDFAcom" onclick="exportarPDFAcometida()" disabled title="Genera la memoria de cálculo de la acometida para guardarla como PDF">⭳ EXPORTAR ACOMETIDA A PDF</button>
+    </div>
+    <div id="sa_errores" class="errores no-print" style="display:none;"></div>
+    <div id="resultadoAcometidaSola" class="no-print" style="display:none;">
+      <div class="cascade-box" id="sa_cascada"></div>
+      <div class="grid4">
+        <div class="result-card"><div class="lbl">Protección general</div><div class="big" id="sa_resBreaker">-</div><div class="sub" id="sa_resBreakerSub"></div></div>
+        <div class="result-card"><div class="lbl">Diferencial general</div><div class="big" id="sa_resDif">-</div><div class="sub" id="sa_resDifSub"></div></div>
+        <div class="result-card"><div class="lbl">Sección de fase</div><div class="big" id="sa_resSeccion">-</div><div class="sub" id="sa_resSeccionSub"></div></div>
+        <div class="result-card"><div class="lbl">Conductores (fases, neutro, PE)</div><div class="big" id="sa_resCond">-</div><div class="sub" id="sa_resCondSub"></div></div>
+      </div>
+      <div id="sa_avisos" class="avisos-box" style="display:none;"></div>
+    </div>
   </div>
 
   <!-- SECCIÓN 3: CIRCUITOS DE POTENCIA -->
@@ -729,7 +747,7 @@ tr.row-add td{padding-top:10px;}
           <th>Circuito</th><th>Ib motor (A)</th><th>Ib diseño cable (A)</th>
           <th>Sección por intensidad <button class="info-btn no-print" onclick="showInfo('criterioDoble')">?</button></th>
           <th>Sección por caída U</th>
-          <th>Sección final</th><th>Iz corr. (A)</th>
+          <th>Sección final</th><th>PE (mm²)</th><th>Iz corr. (A)</th>
           <th>Caída U (%)</th><th>Curva</th><th>Magnetotérmico</th><th>Guardamotor</th><th>Calor al cuadro (W)</th>
         </tr>
       </thead>
@@ -739,7 +757,7 @@ tr.row-add td{padding-top:10px;}
 
     <h3>Alimentación general y acometida</h3>
     <div class="cascade-box" id="cascadaGeneral"></div>
-    <div class="grid3">
+    <div class="grid4">
       <div class="result-card">
         <div class="lbl">Interruptor general</div>
         <div class="big" id="resBreakerGeneral">-</div>
@@ -754,6 +772,11 @@ tr.row-add td{padding-top:10px;}
         <div class="lbl">Sección acometida</div>
         <div class="big" id="resSeccionAcometida">-</div>
         <div class="sub" id="resSeccionAcometidaSub"></div>
+      </div>
+      <div class="result-card">
+        <div class="lbl">Conductores (fases, neutro, PE)</div>
+        <div class="big" id="resConductoresAcometida">-</div>
+        <div class="sub" id="resConductoresAcometidaSub"></div>
       </div>
     </div>
 
@@ -794,7 +817,7 @@ tr.row-add td{padding-top:10px;}
     <div class="table-scroll">
     <table class="stack">
       <thead><tr>
-        <th>Circuito</th><th>Ib diseño (A)</th><th>Longitud (m)</th><th>Sección</th><th>Iz corr. (A)</th><th>Caída U (%)</th><th>Decisivo</th>
+        <th>Circuito</th><th>Ib diseño (A)</th><th>Longitud (m)</th><th>Sección</th><th>PE (mm²)</th><th>Iz corr. (A)</th><th>Caída U (%)</th><th>Decisivo</th>
       </tr></thead>
       <tbody id="tbodyCableInterior"></tbody>
     </table>
@@ -1266,6 +1289,12 @@ function marcarResultadosObsoletos(){
   }
   const m = document.getElementById('resultadoMotorIndependiente');
   if(m && m.style.display!=='none') m.classList.add('obsoleto');
+  const sa = document.getElementById('resultadoAcometidaSola');
+  if(sa && sa.style.display!=='none'){
+    sa.classList.add('obsoleto');
+    const inf = document.getElementById('informe');
+    if(inf) inf.innerHTML = '<p class="inf-nota">Los datos han cambiado desde el último cálculo. Pulsa «CALCULAR SOLO LA ACOMETIDA» para regenerar la memoria antes de imprimir.</p>';
+  }
 }
 
 function toggleDistribuidor(){
@@ -1594,39 +1623,48 @@ function calcularConProteccion(ibDiseno, opts){
   return {elegido, breaker, subidaPorProteccion:null};
 }
 
-// Neutro: sin neutro (3F) → ninguno. Monofásico o con armónicos → igual a la
-// fase. Trifásico equilibrado: igual a la fase hasta 16 mm² Cu / 25 mm² Al y la
-// mitad por encima (con esos mínimos), UNE-HD 60364-5-52 §524.
+// ======================= ACOMETIDA (cálculo independiente) =======================
+// Todo el cálculo de la acometida vive aquí y NO depende de circuitos, 24 VDC,
+// dimensiones ni ventilación: lo usa tanto el botón «Calcular solo la acometida»
+// como el cálculo del cuadro completo, así que dan el mismo resultado.
+
+// Neutro, tabla 1 de la ITC-BT-14 (fase → neutro, mm²). Hasta 10 mm² el neutro
+// es igual a la fase; con aluminio de 16 mm² también.
+const NEUTRO_ITC_BT_14 = {10:10, 16:10, 25:16, 35:16, 50:25, 70:35, 95:50, 120:70, 150:70, 185:95, 240:120, 300:150};
 function seccionNeutro(sFase, material, sistema, armonicos){
   if(sistema==='trif3') return null;
-  const limite = material==='al' ? 25 : 16;
   if(sistema==='mono') return {seccion:sFase, motivo:'monofásico: neutro igual a la fase'};
   if(armonicos) return {seccion:sFase, motivo:'con armónicos el neutro no se reduce'};
-  if(sFase<=limite) return {seccion:sFase, motivo:`igual a la fase, al ser la fase ≤ ${limite} mm²`};
-  const objetivo = Math.max(limite, sFase/2);
-  return {seccion: SECCIONES.find(x=>x>=objetivo) || sFase, motivo:'mitad de la fase, carga equilibrada y sin armónicos importantes'};
+  if(sFase<=10) return {seccion:sFase, motivo:'igual a la fase (fase ≤ 10 mm²)'};
+  if(sFase===16 && material==='al') return {seccion:16, motivo:'igual a la fase (aluminio, 16 mm²)'};
+  const n = NEUTRO_ITC_BT_14[sFase];
+  return {seccion: n!==undefined ? n : sFase, motivo:`tabla 1 de la ITC-BT-14: fase ${sFase} mm² → neutro ${n!==undefined?n:sFase} mm², carga equilibrada`};
+}
+// Conductor de protección, tabla 2 de la ITC-BT-19 (mismo material que la fase):
+// fase ≤ 16 → igual; 16 < fase ≤ 35 → 16; fase > 35 → mitad (sección normalizada).
+function seccionPE(sFase){
+  if(sFase<=16) return {seccion:sFase, motivo:'igual a la fase (fase ≤ 16 mm², ITC-BT-19 tabla 2)'};
+  if(sFase<=35) return {seccion:16, motivo:'16 mm² (fase entre 16 y 35 mm², ITC-BT-19 tabla 2)'};
+  const sp = SECCIONES.find(x=>x>=sFase/2) || sFase;
+  return {seccion:sp, motivo:`mitad de la fase, ${sp} mm² normalizado (fase > 35 mm², ITC-BT-19 tabla 2)`};
 }
 function textoNeutro(n){
   return n ? `Neutro: <strong>${n.seccion} mm²</strong> (${n.motivo})` : 'Sin conductor neutro (3F)';
 }
+function resumenConductores(res, sistema){
+  const S = res.elegidoAcom.seccion, pe = res.peAcom.seccion, n = res.neutroAcom;
+  if(sistema==='trif3') return `3×${S} + PE ${pe} mm²`;
+  if(sistema==='trif4') return `3×${S} + N ${n.seccion} + PE ${pe} mm²`;
+  return `F ${S} + N ${n.seccion} + PE ${pe} mm²`;
+}
 
-function calcular(){
-  const errores = [];
-  const tAmb     = num('tAmb',     'Temperatura ambiente máxima (°C)',   {min:-20, max:80}, errores);
-  const tInt     = num('tInt',     'Temperatura interior máxima (°C)',   {min:-20, max:100}, errores);
-  const vdropMax = num('vdropMax', 'Caída de tensión máx. circuitos (%)',{mayorQueCero:true, max:20}, errores);
-  const margen24Pct = num('margen24','Margen de seguridad 24VDC (%)',    {min:0, max:200}, errores);
-  const Hmm = num('dimH', 'Alto del cuadro (mm)',  {mayorQueCero:true}, errores);
-  const Wmm = num('dimW', 'Ancho del cuadro (mm)', {mayorQueCero:true}, errores);
-  const Dmm = num('dimD', 'Fondo del cuadro (mm)', {mayorQueCero:true}, errores);
-  const montajeFactor = parseFloat(document.getElementById('montaje').value);
-
-  const modoAcometida = document.getElementById('modoAcometida').value;
-  const planos = modoAcometida==='planos';
-  // En modo "planos" el cos φ del cuadro lo da el propio formulario de planos.
-  const cosfGeneral   = planos
+// Lee y valida SOLO los datos propios de la acometida (sin circuitos ni cuadro).
+function leerEntradaAcometida(errores){
+  const modo = document.getElementById('modoAcometida').value;
+  const planos = modo==='planos';
+  const cosf = planos
     ? num('planosCosf', 'cos φ (planos)', {mayorQueCero:true, max:1}, errores)
-    : num('cosfGeneral',  'cos φ medio del cuadro',            {mayorQueCero:true, max:1}, errores);
+    : num('cosfGeneral', 'cos φ medio del cuadro', {mayorQueCero:true, max:1}, errores);
   let planosDatos = null;
   if(planos){
     const unidad = document.getElementById('planosUnidad').value;
@@ -1640,20 +1678,280 @@ function calcular(){
     const secc = opcional('planosSeccionador', 'Seccionador (A)');
     const term = opcional('planosTermico', 'Térmico (A)');
     const pdc  = opcional('planosPdC', 'Poder de corte (kA)');
+    const icc  = opcional('planosIcc', 'Icc en cabecera (kA)');
     if(secc===null && term===null) errores.push('Indica al menos el calibre del seccionador o del térmico (A)');
-    const icc = opcional('planosIcc', 'Icc en cabecera (kA)');
     planosDatos = {unidad, valor, simult, secc, term, pdc, icc,
       tipoProt: document.getElementById('planosTipoProt').value,
       motor: document.getElementById('planosMotor').checked,
       curva: document.getElementById('planosCurva').value};
   }
-  const sistemaAcom = document.getElementById('sistemaAcometida').value;
-  const armonicos = document.getElementById('armonicos').checked && sistemaAcom!=='trif3';
-  const agrupAcom = num('agrupAcometida', 'Circuitos agrupados en la acometida', {min:1}, errores);
-  const distAcometida = num('distAcometida','Distancia de la acometida (m)',      {mayorQueCero:true}, errores);
-  const metodoAcometida = document.getElementById('metodoAcometida').value;
-  const vdropAcomMax  = num('vdropAcomMax', 'Caída de tensión máx. acometida (%)',{mayorQueCero:true, max:20}, errores);
-  const sensGeneral   = parseInt(document.getElementById('sensGeneral').value);
+  const sistema = document.getElementById('sistemaAcometida').value;
+  const armonicos = document.getElementById('armonicos').checked && sistema!=='trif3';
+  const agrup = num('agrupAcometida', 'Circuitos agrupados en la acometida', {min:1}, errores);
+  const dist = num('distAcometida', 'Distancia de la acometida (m)', {mayorQueCero:true}, errores);
+  const metodo = document.getElementById('metodoAcometida').value;
+  const vdropMax = num('vdropAcomMax', 'Caída de tensión máx. acometida (%)', {mayorQueCero:true, max:20}, errores);
+  const sens = parseInt(document.getElementById('sensGeneral').value);
+  const lga = document.getElementById('modoEstrictoLGA').checked
+    ? {on:true, tramo:document.getElementById('tramoTipo').value, material:document.getElementById('materialAcom').value}
+    : {on:false};
+  return {modo, planos, cosf, planosDatos, sistema, armonicos, agrup, dist, metodo, vdropMax, sens, lga};
+}
+
+// Cálculo puro de la acometida. `ent` = datos de leerEntradaAcometida() más
+// {aisl, tAmb, margenIz, minSeccionPotencia, limVdFuerza} y, en el modo
+// «desde circuitos», {cargaCalc:{ibGeneral, breakerGeneral}}.
+function calcularAcometida(ent){
+  const avisos = [];
+  MARGEN_SEGURIDAD_IZ = ent.margenIz;
+  const planos = ent.planos;
+  const sistema = ent.sistema;
+  const trifAcom = sistema!=='mono';
+  const Vacom = trifAcom ? 400 : 230;
+  const cosf = ent.cosf;
+  let ibGeneral = ent.cargaCalc ? ent.cargaCalc.ibGeneral : 0;
+  let breakerGeneral = ent.cargaCalc ? ent.cargaCalc.breakerGeneral : 0;
+  let infoPlanos = null;
+  const maxGen = BREAKERS_GENERAL[BREAKERS_GENERAL.length-1];
+  if(ent.vdropMax > ent.limVdFuerza) avisos.push(`La caída de tensión máxima fijada para la acometida (${ent.vdropMax}%) supera el límite legal aplicable (${ent.limVdFuerza}%).`);
+
+  if(planos){
+    const d = ent.planosDatos;
+    const k = trifAcom ? Math.sqrt(3) : 1;
+    let ibNominal;
+    if(d.unidad==='kW')       ibNominal = d.valor*1000/(k*Vacom*cosf);
+    else if(d.unidad==='kVA') ibNominal = d.valor*1000/(k*Vacom);
+    else                      ibNominal = d.valor;
+    ibGeneral = ibNominal*d.simult/100;
+    const minRecomendado = pickGeneralBreaker(ibGeneral);
+    const minTxt = ibGeneral > maxGen ? `más de ${maxGen}` : minRecomendado;
+    const sinTermico = d.term===null;
+    breakerGeneral = sinTermico ? d.secc : d.term;
+    infoPlanos = {...d, trifAcom, Vacom, ibNominal, minRecomendado, minTxt, sinTermico};
+    const fmtN = n => (Number.isInteger(n) ? n : n.toFixed(1));
+    if(sinTermico) avisos.push(`Solo se ha indicado el seccionador (${fmtN(d.secc)} A): se usa como referencia para dimensionar el cable, pero un seccionador <strong>no protege</strong> contra sobrecargas ni cortocircuitos. Falta el térmico/magnetotérmico para cumplir la ITC-BT-22.`);
+    if(d.secc!==null && d.term!==null && d.secc < d.term) avisos.push(`El seccionador (${fmtN(d.secc)} A) es de menor calibre que el térmico (${fmtN(d.term)} A): el seccionador debe soportar al menos la intensidad del térmico.`);
+    if(breakerGeneral < ibGeneral) avisos.push(`<strong>Protección insuficiente:</strong> la Ib de la máquina según planos (${ibGeneral.toFixed(1)} A) supera el calibre de la protección (${fmtN(breakerGeneral)} A). La ITC-BT-22 exige Ib ≤ In: el calibre mínimo normalizado sería ${minTxt} A.`);
+    else if(breakerGeneral < ibNominal) avisos.push(`La protección (${fmtN(breakerGeneral)} A) cubre la Ib con el uso indicado (${ibGeneral.toFixed(1)} A) pero <strong>no la intensidad de la máquina a plena carga</strong> (${ibNominal.toFixed(1)} A). Solo es válida si el uso real nunca supera el ${(100*breakerGeneral/ibNominal).toFixed(0)} %.`);
+    else if(breakerGeneral > 2*ibGeneral && breakerGeneral > 16) avisos.push(`La protección (${fmtN(breakerGeneral)} A) es más del doble de la Ib de planos (${ibGeneral.toFixed(1)} A): el cable de acometida saldrá sobredimensionado para esa protección. Revisa si el calibre o la potencia de planos son correctos.`);
+    if(!BREAKERS_GENERAL.includes(breakerGeneral)) avisos.push(`El calibre ${fmtN(breakerGeneral)} A no es un valor normalizado habitual; compruébalo en el esquema.`);
+    if(d.icc!==null && d.pdc!==null && d.pdc < d.icc) avisos.push(`<strong>Poder de corte insuficiente:</strong> el poder de corte indicado (${d.pdc} kA) es menor que la Icc en cabecera (${d.icc} kA). La ITC-BT-22 exige que la protección pueda cortar la corriente de cortocircuito prevista en su punto de instalación.`);
+    else if(d.icc!==null && d.pdc===null) avisos.push(`Se ha indicado la Icc en cabecera (${d.icc} kA) pero no el poder de corte de la protección: no se puede comprobar que corte esa corriente de cortocircuito.`);
+    avisos.push(`Cortocircuito: no se ha verificado la solicitación térmica del cable (I²t ≤ k²S² con el tiempo de disparo de la protección) ni el disparo magnético al final de la línea (ITC-BT-22). Compruébalo con los datos del fabricante.`);
+  }
+  // Corriente con la que se dimensiona el cable (Iz mínima exigida).
+  //  - Magnetotérmico: In. Fusible gG: In·1,6/1,45 (I2 ≤ 1,45·Iz).
+  //  - Máquina con motores (ITC-BT-47): al menos 1,25 × la intensidad de planos al 100 %.
+  let ibRefCable = breakerGeneral;
+  if(planos){
+    if(infoPlanos.tipoProt==='fusible') ibRefCable = breakerGeneral*1.6/1.45;
+    if(infoPlanos.motor) ibRefCable = Math.max(ibRefCable, 1.25*infoPlanos.ibNominal);
+  }
+  const rcdGeneral = pickRCD(breakerGeneral);
+  if(breakerGeneral > RCD_RATINGS[RCD_RATINGS.length-1]) avisos.push(`No hay diferencial normalizado de ${breakerGeneral} A o más (el mayor contemplado es ${RCD_RATINGS[RCD_RATINGS.length-1]} A): usa un relé diferencial con transformador toroidal.`);
+  if(!planos && ibGeneral > maxGen) avisos.push(`La Ib general (${ibGeneral.toFixed(0)} A) supera el mayor calibre contemplado (${maxGen} A): reparte la alimentación en varias líneas.`);
+
+  let materialAcom = 'cu', izFactorAcom = 1, minSeccionAcom = ent.minSeccionPotencia, etiquetaCriterio = '';
+  if(ent.lga.on){
+    materialAcom = ent.lga.material;
+    izFactorAcom = materialAcom==='cu' ? 1 : 0.78; // reducción aproximada de ampacidad en aluminio
+    minSeccionAcom = materialAcom==='cu' ? 10 : 16; // ITC-BT-14: mínimo 10 mm² Cu / 16 mm² Al
+    etiquetaCriterio = ` · modo estricto ${ent.lga.tramo==='acometida'?'acometida':'LGA'} (${materialAcom==='cu'?'Cu':'Al'}, ρ=${resistividadDe(materialAcom, ent.aisl).toFixed(5)}), mínimo absoluto ${minSeccionAcom} mm²`;
+  }
+  // El cable se dimensiona contra el In de la protección (ITC-BT-22: Ib ≤ In ≤ Iz),
+  // no contra la Ib. Con armónicos y neutro, factor 0,86 (UNE-HD 60364-5-52 anexo E).
+  const fArmonicos = (sistema==='trif4' && ent.armonicos) ? 0.86 : 1;
+  const fagrupAcom = factorAgrupamiento(ent.agrup)*fArmonicos;
+  const elegidoAcom = calcularSeccionYVd(ibRefCable, {
+    metodo:ent.metodo, aislamiento:ent.aisl, ftemp:factorTemp(ent.tAmb, ent.aisl), fagrup:fagrupAcom,
+    V:Vacom, long:ent.dist, trifasico:trifAcom, vdropMax:ent.vdropMax,
+    minSeccion:minSeccionAcom, material:materialAcom, izFactorMaterial:izFactorAcom,
+    cosf, ibCaida:ibGeneral
+  });
+  if(elegidoAcom.izCorr < ibRefCable){
+    avisos.push(`Coordinación cable–protección de la acometida: la Iz corregida del cable (${elegidoAcom.izCorr.toFixed(1)} A) es <strong>inferior a la corriente exigida</strong> (${ibRefCable.toFixed(1)} A${ibRefCable>breakerGeneral+0.05?`, mayor que el calibre ${breakerGeneral} A por el criterio de fusible gG o de motor`:''}), por lo que no queda protegido frente a sobrecarga (ITC-BT-22: Ib ≤ In ≤ Iz). Hay que subir sección, mejorar el método de instalación o repartir la alimentación.`);
+  }
+  const neutroAcom = seccionNeutro(elegidoAcom.seccion, materialAcom, sistema, ent.armonicos);
+  const peAcom = seccionPE(elegidoAcom.seccion);
+  return {trifAcom, Vacom, infoPlanos, ibGeneral, breakerGeneral, ibRefCable, rcdGeneral,
+          materialAcom, minSeccionAcom, etiquetaCriterio, fArmonicos, elegidoAcom, neutroAcom, peAcom, avisos};
+}
+
+const IDS_ACOM_CUADRO = {breaker:'resBreakerGeneral', breakerSub:'resBreakerGeneralSub', dif:'resDiferencialGeneral', difSub:'resDiferencialGeneralSub',
+  sec:'resSeccionAcometida', secSub:'resSeccionAcometidaSub', cond:'resConductoresAcometida', condSub:'resConductoresAcometidaSub'};
+const IDS_ACOM_SOLA = {breaker:'sa_resBreaker', breakerSub:'sa_resBreakerSub', dif:'sa_resDif', difSub:'sa_resDifSub',
+  sec:'sa_resSeccion', secSub:'sa_resSeccionSub', cond:'sa_resCond', condSub:'sa_resCondSub'};
+
+// Escribe las tarjetas de la acometida en los elementos indicados.
+function pintarAcometida(res, ent, ids){
+  const $ = id => document.getElementById(id);
+  const ip = res.infoPlanos, e = res.elegidoAcom;
+  $(ids.breaker).textContent = res.breakerGeneral+' A';
+  if(ip){
+    $(ids.breakerSub).innerHTML =
+      `Protección instalada según cuadro (${ip.sinTermico?'seccionador':(ip.tipoProt==='fusible'?'fusible gG':'térmico')})${ip.curva?`, curva ${ip.curva}`:''}${ip.pdc?`, ${ip.pdc} kA`:''}<br>`+
+      `Ib de planos ≈ <strong>${res.ibGeneral.toFixed(1)} A</strong> (${ip.valor} ${ip.unidad}${ip.unidad==='A'?'':` a ${res.Vacom} V ${res.trifAcom?'trif.':'mono.'}, cos φ ${ent.cosf}`}${ip.simult<100?`, uso ${ip.simult}%`:''}) · calibre mínimo normalizado: ${ip.minTxt} A`;
+  }
+  $(ids.dif).textContent = res.rcdGeneral+' A / '+ent.sens+' mA';
+  $(ids.difSub).textContent = `Diferencial general de intensidad nominal ≥ protección general, sensibilidad seleccionada ${ent.sens} mA`;
+  $(ids.sec).textContent = e.seccion+' mm²'+(e.insuficiente?' ⚠':'');
+  $(ids.secSub).innerHTML =
+    `Por intensidad: <strong>${e.seccionPorIntensidad} mm²</strong> (Iz ${e.izCorrPorIntensidad.toFixed(1)} A) · `+
+    `Por caída U: <strong>${e.seccionPorCaidaTension} mm²</strong> (${e.vdPorCaidaTension.toFixed(2)}%) · `+
+    `Decisivo: ${e.criterioDecisivo}<br>`+
+    `Con la sección final: Iz corr. ${e.izCorr.toFixed(1)} A · ΔU ${e.vd.toFixed(2)}% (máx. ${ent.vdropMax}%) a ${ent.dist} m${res.etiquetaCriterio}`+
+    (res.ibRefCable>res.breakerGeneral+0.05 ? `<br>Corriente exigida al cable: ${res.ibRefCable.toFixed(1)} A (${[ip&&ip.tipoProt==='fusible'?'fusible gG: 1,6·In/1,45':'', ip&&ip.motor?'motor: 1,25 × Ib de planos (ITC-BT-47)':''].filter(Boolean).join(' · ')})` : '');
+  $(ids.cond).textContent = resumenConductores(res, ent.sistema);
+  $(ids.condSub).innerHTML = `${textoNeutro(res.neutroAcom)}<br>PE: <strong>${res.peAcom.seccion} mm²</strong> (${res.peAcom.motivo}; mismo material que la fase)`;
+}
+function cascadaAcometidaPlanos(res, ent){
+  const ip = res.infoPlanos;
+  return `
+    <div class="step"><span class="step-num">1</span><span>Potencia según planos: <strong>${ip.valor} ${ip.unidad}</strong>${ip.unidad==='A'?'':` a ${ip.Vacom} V ${ip.trifAcom?'trifásico':'monofásico'}${ip.unidad==='kW'?`, cos φ ${ent.cosf}`:''}`} → ${ip.ibNominal.toFixed(1)} A</span></div>
+    <div class="step"><span class="step-num">2</span><span>Uso/simultaneidad de la máquina ${ip.simult}% → <strong>Ib = ${res.ibGeneral.toFixed(1)} A</strong></span></div>
+    <div class="step"><span class="step-num">3</span><span>Protección instalada: ${ip.secc!==null?`seccionador ${ip.secc} A`:'sin seccionador indicado'} · ${ip.term!==null?`térmico ${ip.term} A`:'sin térmico indicado'}${ip.curva?` · curva ${ip.curva}`:''}${ip.pdc?` · PdC ${ip.pdc} kA`:''}</span></div>
+    <div class="step step-total"><span class="step-num">=</span><span>In = ${res.breakerGeneral} A (Ib ${res.ibGeneral.toFixed(1)} A ≤ In) → diferencial ${res.rcdGeneral} A / ${ent.sens} mA → cable con Iz ≥ ${res.ibRefCable.toFixed(1)} A y ΔU ≤ ${ent.vdropMax}% → ${resumenConductores(res, ent.sistema)}</span></div>`;
+}
+
+let ultimaAcometida = null;
+// Botón «Calcular solo la acometida»: usa solo los datos de la acometida y los
+// generales de «Datos del cuadro» (temperatura, aislamiento, margen, suministro).
+function calcularAcometidaSola(){
+  if(document.getElementById('modoAcometida').value!=='planos'){
+    document.getElementById('modoAcometida').value = 'planos';
+    toggleModoAcometida();
+  }
+  const errores = [];
+  const tAmb = num('tAmb', 'Temperatura ambiente máxima (°C)', {min:-20, max:80}, errores);
+  const aisl = aislamientoActual();
+  if(isFinite(tAmb) && tAmb >= (aisl==='XLPE' ? 90 : 70)) errores.push(`La temperatura ambiente (${tAmb} °C) alcanza o supera la temperatura máxima del conductor: el cable no admite carga con este aislamiento`);
+  const ent = leerEntradaAcometida(errores);
+  mostrarErrores(errores, 'sa_errores');
+  const cont = document.getElementById('resultadoAcometidaSola');
+  if(errores.length){ cont.style.display='none'; return; }
+  const margenIz = parseFloat(document.getElementById('margenIz').value) || 0.94;
+  const limVd = limiteVdropLegal();
+  const full = {...ent, aisl, tAmb, margenIz, limVdFuerza: limVd.fuerza,
+    minSeccionPotencia: document.getElementById('seccionMinPractica').checked ? 2.5 : SECCIONES[0]};
+  const res = calcularAcometida(full);
+  pintarAcometida(res, full, IDS_ACOM_SOLA);
+  document.getElementById('sa_cascada').innerHTML = cascadaAcometidaPlanos(res, full);
+  const avSec = avisosDeSeccion(res.elegidoAcom, null, full.metodo, aisl);
+  const bloques = res.avisos.map(a=>`<div class="step step-aviso"><span class="step-num">⚠</span><span>${a}</span></div>`).join('') + avSec;
+  const caja = document.getElementById('sa_avisos');
+  caja.style.display = bloques ? 'block' : 'none';
+  caja.innerHTML = bloques ? '<h3>Avisos</h3>'+bloques : '';
+  const lista = res.avisos.slice();
+  if(avSec) avSec.replace(/<div class="step step-aviso"><span class="step-num">⚠<\/span><span>/g,'').replace(/<\/span><\/div>/g,'|').split('|').filter(x=>x.trim()).forEach(x=>lista.push(x));
+  ultimaAcometida = {fecha:new Date(), ent:full, res, avisos:lista,
+    tipoSuministro: document.getElementById('tipoSuministro').selectedOptions[0].textContent,
+    limVd, ref: document.getElementById('refObra').value.trim()};
+  cont.style.display = 'block';
+  cont.classList.remove('obsoleto');
+  document.getElementById('btnPDFAcom').disabled = false;
+  construirInformeAcometida();
+}
+
+function construirInformeAcometida(){
+  const a = ultimaAcometida;
+  if(!a) return false;
+  const e = a.ent, r = a.res, ip = r.infoPlanos, el = r.elegidoAcom;
+  const ref = a.ref || '(sin referencia)';
+  const fecha = a.fecha.toLocaleDateString('es-ES', {day:'2-digit', month:'long', year:'numeric'});
+  const hora = a.fecha.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+  let nSec = 0;
+  const sec = t => `<h2>${++nSec}. ${t}</h2>`;
+  const html = [];
+  html.push(`<div class="inf-cab">
+    <div class="inf-tit">Memoria de cálculo — Acometida</div>
+    <div class="inf-sub">${esc(ref)}</div>
+    <div class="inf-meta">Generado el ${fecha} a las ${hora} · Cálculo según REBT (RD 842/2002), ITC-BT-19 e ITC-BT-22</div>
+  </div>`);
+  const sisTxt = {trif3:'Trifásico 400 V, 3F (sin neutro)', trif4:'Trifásico 400 V + neutro (3F+N)', mono:'Monofásico 230 V (F+N)'}[e.sistema];
+  html.push(sec('Datos de partida'));
+  html.push(pares([
+    ['Sistema de alimentación', sisTxt],
+    ['Potencia según planos', `${ip.valor} ${ip.unidad}${ip.unidad==='A'?'':` — ${r.Vacom} V ${r.trifAcom?'trifásico':'monofásico'}${ip.unidad==='kW'?`, cos φ ${e.cosf}`:''}`}`],
+    ['Uso / simultaneidad de la máquina', `${ip.simult}%`],
+    ['Seccionador del cuadro', ip.secc!==null ? `${ip.secc} A` : 'No indicado'],
+    ['Protección del cable', ip.term!==null ? `${ip.tipoProt==='fusible'?'Fusible gG':'Térmico / magnetotérmico'} ${ip.term} A${ip.curva?`, curva ${ip.curva}`:''}${ip.pdc?`, poder de corte ${ip.pdc} kA`:''}` : 'No indicada (se usa el seccionador como referencia)'],
+    ip.icc!==null ? ['Icc en cabecera', `${ip.icc} kA${ip.pdc!==null ? ` — poder de corte ${ip.pdc} kA ${ip.pdc>=ip.icc?'(cumple)':'(NO cumple)'}` : ''}`] : null,
+    ['Máquina con motores (ITC-BT-47)', ip.motor ? 'Sí — cable para 1,25 × la intensidad de planos' : 'No'],
+    ['Distancia de la acometida', `${e.dist} m`],
+    ['Método de instalación', METODOS_INFO[e.metodo]],
+    ['Circuitos agrupados', `${e.agrup} (factor ${f(factorAgrupamiento(e.agrup),2)})`],
+    e.armonicos ? ['Cargas con armónicos', 'Sí — neutro como conductor cargado (factor 0,86 en 3F+N); neutro igual a la fase'] : null,
+    ['Aislamiento del conductor', e.aisl==='XLPE' ? 'Termoestable XLPE / EPR (90 °C)' : 'Termoplástico PVC (70 °C)'],
+    ['Temperatura ambiente máxima', `${e.tAmb} °C (factor ${f(factorTemp(e.tAmb, e.aisl),3)})`],
+    ['Margen de seguridad sobre Iz de tabla', e.margenIz===1 ? '1,00 — Tabla 1 del REBT sin margen añadido' : `${String(e.margenIz).replace('.',',')} — margen propio, no normativo`],
+    ['Tipo de suministro', a.tipoSuministro],
+    ['ΔU máxima adoptada', `${e.vdropMax}% (límite legal ${a.limVd.fuerza}% en fuerza)`],
+    e.lga.on ? ['Modo estricto', `${e.lga.tramo==='acometida'?'Acometida':'LGA'} — ${e.lga.material==='cu'?'cobre':'aluminio'}, sección mínima absoluta ${r.minSeccionAcom} mm²`] : null
+  ]));
+  html.push(sec('Intensidad y protección'));
+  html.push(pares([
+    ['Intensidad nominal de la máquina', `${f(ip.ibNominal,1)} A`],
+    ['Intensidad de servicio Ib', `${f(r.ibGeneral,1)} A`],
+    ['Calibre de protección adoptado (In)', `${r.breakerGeneral} A — condición Ib ≤ In ≤ Iz de la ITC-BT-22`],
+    ['Corriente exigida al cable (Iz mínima)', `${f(r.ibRefCable,1)} A`],
+    ['Diferencial general', `${r.rcdGeneral} A / ${e.sens} mA`]
+  ]));
+  html.push(sec('Conductores de la acometida'));
+  html.push(pares([
+    ['Sección de fase por intensidad', `${el.seccionPorIntensidad} mm² (Iz corr. ${f(el.izCorrPorIntensidad,1)} A)`],
+    ['Sección de fase por caída de tensión', `${el.seccionPorCaidaTension} mm² (${f(el.vdPorCaidaTension,2)}%)`],
+    ['Sección de fase adoptada', `<strong>${el.seccion} mm²</strong> — criterio decisivo: ${el.criterioDecisivo}`],
+    ['Iz corregida con la sección adoptada', `${f(el.izCorr,1)} A`],
+    ['ΔU resultante', `${f(el.vd,2)}% sobre ${e.dist} m (máx. ${e.vdropMax}%), calculada con la Ib de ${f(r.ibGeneral,1)} A`],
+    ['Neutro', r.neutroAcom ? `<strong>${r.neutroAcom.seccion} mm²</strong> — ${r.neutroAcom.motivo}` : 'Sin conductor neutro (3F)'],
+    ['Conductor de protección (PE)', `<strong>${r.peAcom.seccion} mm²</strong> — ${r.peAcom.motivo}`],
+    ['Cable resultante', `<strong>${resumenConductores(r, e.sistema)}</strong>`],
+    r.etiquetaCriterio ? ['Criterio adicional aplicado', esc(r.etiquetaCriterio.replace(/^\s*·\s*/,''))] : null
+  ]));
+  if(a.avisos.length){
+    html.push(sec('Avisos'));
+    html.push('<ul class="inf-avisos">'+a.avisos.map(x=>`<li>${x}</li>`).join('')+'</ul>');
+  }
+  html.push(sec('Referencias y limitaciones'));
+  html.push(`<ul class="inf-refs">
+    <li>Intensidades admisibles: <strong>Tabla 1 del apartado 2.2.3 de la ITC-BT-19</strong> (RD 842/2002), conductor de cobre, a 40 °C, con factor de temperatura y de agrupamiento según UNE 20.460-5-523 / UNE-HD 60364-5-52.</li>
+    <li>Coordinación cable–protección: <strong>ITC-BT-22</strong> (Ib ≤ In ≤ Iz). Cables de motores: <strong>ITC-BT-47</strong> (125 %). Límites de caída de tensión: <strong>ITC-BT-19 apartado 2.2.2</strong>.</li>
+    <li>Neutro: tabla 1 de la <strong>ITC-BT-14</strong>. Conductor de protección: tabla 2 de la <strong>ITC-BT-19</strong>, mismo material que la fase.</li>
+    <li>El cálculo de caída de tensión es <strong>resistivo</strong>: desprecia la reactancia del conductor.</li>
+    <li><strong>No se comprueban</strong>: la resistencia térmica al cortocircuito de los conductores (I²t ≤ k²S²), la selectividad entre protecciones ni la puesta a tierra (ITC-BT-18).</li>
+    <li>Documento de apoyo al predimensionado. <strong>No sustituye a un proyecto firmado por técnico competente.</strong></li>
+  </ul>`);
+  document.getElementById('informe').innerHTML = html.join('');
+  return true;
+}
+
+function exportarPDFAcometida(){
+  if(!ultimaAcometida){ alert('Primero pulsa CALCULAR SOLO LA ACOMETIDA.'); return; }
+  const cont = document.getElementById('resultadoAcometidaSola');
+  if(cont.classList.contains('obsoleto')){
+    if(!confirm('Has cambiado datos desde el último cálculo, así que el PDF saldría con los resultados anteriores.\n\n¿Quieres recalcular ahora y exportar los resultados actualizados?')){ return; }
+    calcularAcometidaSola();
+    if(cont.style.display==='none') return;
+  }
+  if(!construirInformeAcometida()) return;
+  window.print();
+}
+
+function calcular(){
+  const errores = [];
+  const tAmb     = num('tAmb',     'Temperatura ambiente máxima (°C)',   {min:-20, max:80}, errores);
+  const tInt     = num('tInt',     'Temperatura interior máxima (°C)',   {min:-20, max:100}, errores);
+  const vdropMax = num('vdropMax', 'Caída de tensión máx. circuitos (%)',{mayorQueCero:true, max:20}, errores);
+  const margen24Pct = num('margen24','Margen de seguridad 24VDC (%)',    {min:0, max:200}, errores);
+  const Hmm = num('dimH', 'Alto del cuadro (mm)',  {mayorQueCero:true}, errores);
+  const Wmm = num('dimW', 'Ancho del cuadro (mm)', {mayorQueCero:true}, errores);
+  const Dmm = num('dimD', 'Fondo del cuadro (mm)', {mayorQueCero:true}, errores);
+  const montajeFactor = parseFloat(document.getElementById('montaje').value);
+
+  // Datos propios de la acometida (misma lectura que usa el botón «solo acometida»).
+  const entAcom = leerEntradaAcometida(errores);
+  const {planos, planosDatos, cosf: cosfGeneral, sistema: sistemaAcom, armonicos, agrup: agrupAcom,
+         dist: distAcometida, metodo: metodoAcometida, vdropMax: vdropAcomMax, sens: sensGeneral, modo: modoAcometida} = entAcom;
   const longInterior24= num('longInterior24','Longitud cableado 24VDC interior (m)',{mayorQueCero:true}, errores);
 
   if(tInt <= tAmb) errores.push('La temperatura interior máxima admisible debe ser mayor que la temperatura ambiente');
@@ -1700,7 +1998,6 @@ function calcular(){
   const avisosGlobales = [];
   if(tAmb > 60 || tInt > 60) avisosGlobales.push(`Con temperaturas por encima de 60 °C el factor de corrección de la tabla queda fijado en el valor de 60 °C, que <strong>no es conservador</strong>. Comprueba el factor con la UNE-HD 60364-5-52 o el fabricante del cable.`);
   if(vdropMax > limVd.fuerza) avisosGlobales.push(`La caída de tensión máxima fijada para los circuitos (${vdropMax}%) supera el límite legal de la ITC-BT-19 apartado 2.2.2 para este tipo de suministro (${limVd.fuerza}% en usos distintos del alumbrado).`);
-  if(vdropAcomMax > limVd.fuerza) avisosGlobales.push(`La caída de tensión máxima fijada para la acometida (${vdropAcomMax}%) supera el límite legal aplicable (${limVd.fuerza}%).`);
 
   // --- Circuitos de potencia ---
   const tbodyRes = document.getElementById('tbodyResCircuitos');
@@ -1777,6 +2074,7 @@ function calcular(){
       <td data-label="Sección por intensidad">${elegido.seccionPorIntensidad} mm² <span class="sub-inline">(Iz ${elegido.izCorrPorIntensidad.toFixed(1)} A)</span></td>
       <td data-label="Sección por caída U">${elegido.seccionPorCaidaTension} mm² <span class="sub-inline">(${elegido.vdPorCaidaTension.toFixed(2)}%)</span></td>
       <td data-label="Sección final"><strong>${elegido.seccion} mm²</strong>${elegido.insuficiente?' <span class="status-bad">⚠</span>':''} <span class="sub-inline">(${elegido.criterioDecisivo})</span></td>
+      <td data-label="PE (mm²)">${seccionPE(elegido.seccion).seccion}</td>
       <td data-label="Iz corr. (A)">${elegido.izCorr.toFixed(1)} <span class="sub-inline">(${aisl}, ${elegido.nCargados} cond.)</span></td>
       <td data-label="Caída U (%)" class="${elegido.vd>vdropMax?'status-bad':'status-ok'}">${elegido.vd.toFixed(2)}%</td>
       <td data-label="Curva">${curva} <button class="info-btn no-print" onclick="showInfo('curvaMotor')">?</button></td>
@@ -1831,134 +2129,30 @@ function calcular(){
   const potenciaBaseW = potenciaElectricaW + potenciaEntradaFuenteW; // TODAS las cargas, incl. control 24VDC
   const extraArranqueW = (margenArranqueOn && ibMotorMayor > 0) ? potElecMotorMayorW * 0.25 : 0;
   const potenciaGeneralElectricaW = potenciaBaseW + extraArranqueW;
-  let ibGeneral = potenciaGeneralElectricaW/(Math.sqrt(3)*400*cosfGeneral);
-  let breakerGeneral = pickGeneralBreaker(ibGeneral);
-  // Modo "planos": la Ib sale de la potencia de planos y la protección es la
-  // instalada (térmico; si no hay, el seccionador como referencia).
-  const trifAcom = sistemaAcom!=='mono';
-  const Vacom = trifAcom ? 400 : 230;
-  let infoPlanos = null;
+  const ibGeneralCalc = potenciaGeneralElectricaW/(Math.sqrt(3)*400*cosfGeneral);
+  // La acometida se calcula con la misma función que el botón «solo acometida».
+  const resAc = calcularAcometida({...entAcom, aisl, tAmb, margenIz:MARGEN_SEGURIDAD_IZ, minSeccionPotencia,
+    limVdFuerza: limVd.fuerza, cargaCalc:{ibGeneral: ibGeneralCalc, breakerGeneral: pickGeneralBreaker(ibGeneralCalc)}});
+  const {ibGeneral, breakerGeneral, trifAcom, Vacom, infoPlanos, ibRefCable, rcdGeneral, elegidoAcom,
+         neutroAcom, peAcom, materialAcom, minSeccionAcom, etiquetaCriterio, fArmonicos} = resAc;
+  resAc.avisos.forEach(a=>avisosGlobales.push(a));
+  pintarAcometida(resAc, entAcom, IDS_ACOM_CUADRO);
   if(planos){
-    const d = planosDatos;
-    const k = trifAcom ? Math.sqrt(3) : 1;
-    const frac = d.simult/100;
-    let ibNominal;
-    if(d.unidad==='kW')       ibNominal = d.valor*1000/(k*Vacom*cosfGeneral);
-    else if(d.unidad==='kVA') ibNominal = d.valor*1000/(k*Vacom);
-    else                      ibNominal = d.valor;
-    ibGeneral = ibNominal*frac;
-    const minRecomendado = pickGeneralBreaker(ibGeneral);
-    const minTxt = ibGeneral > BREAKERS_GENERAL[BREAKERS_GENERAL.length-1] ? `más de ${BREAKERS_GENERAL[BREAKERS_GENERAL.length-1]}` : minRecomendado;
-    const sinTermico = d.term===null;
-    breakerGeneral = sinTermico ? d.secc : d.term;
-    infoPlanos = {...d, trifAcom, Vacom, ibNominal, minRecomendado, minTxt, sinTermico};
-    const fmtN = n => (Number.isInteger(n) ? n : n.toFixed(1));
-    if(sinTermico) avisosGlobales.push(`Solo se ha indicado el seccionador (${fmtN(d.secc)} A): se usa como referencia para dimensionar el cable, pero un seccionador <strong>no protege</strong> contra sobrecargas ni cortocircuitos. Falta el térmico/magnetotérmico para cumplir la ITC-BT-22.`);
-    if(d.secc!==null && d.term!==null && d.secc < d.term) avisosGlobales.push(`El seccionador (${fmtN(d.secc)} A) es de menor calibre que el térmico (${fmtN(d.term)} A): el seccionador debe soportar al menos la intensidad del térmico.`);
-    if(breakerGeneral < ibGeneral) avisosGlobales.push(`<strong>Protección insuficiente:</strong> la Ib de la máquina según planos (${ibGeneral.toFixed(1)} A) supera el calibre de la protección (${fmtN(breakerGeneral)} A). La ITC-BT-22 exige Ib ≤ In: el calibre mínimo normalizado sería ${minTxt} A.`);
-    else if(breakerGeneral < ibNominal) avisosGlobales.push(`La protección (${fmtN(breakerGeneral)} A) cubre la Ib con el uso indicado (${ibGeneral.toFixed(1)} A) pero <strong>no la intensidad de la máquina a plena carga</strong> (${ibNominal.toFixed(1)} A). Solo es válida si el uso real nunca supera el ${(100*breakerGeneral/ibNominal).toFixed(0)} %.`);
-    else if(breakerGeneral > 2*ibGeneral && breakerGeneral > 16) avisosGlobales.push(`La protección (${fmtN(breakerGeneral)} A) es más del doble de la Ib de planos (${ibGeneral.toFixed(1)} A): el cable de acometida saldrá sobredimensionado para esa protección. Revisa si el calibre o la potencia de planos son correctos.`);
-    if(!BREAKERS_GENERAL.includes(breakerGeneral)) avisosGlobales.push(`El calibre ${fmtN(breakerGeneral)} A no es un valor normalizado habitual; compruébalo en el esquema.`);
-    if(d.icc!==null && d.pdc!==null && d.pdc < d.icc) avisosGlobales.push(`<strong>Poder de corte insuficiente:</strong> el poder de corte indicado (${d.pdc} kA) es menor que la Icc en cabecera (${d.icc} kA). La ITC-BT-22 exige que la protección pueda cortar la corriente de cortocircuito prevista en su punto de instalación.`);
-    else if(d.icc!==null && d.pdc===null) avisosGlobales.push(`Se ha indicado la Icc en cabecera (${d.icc} kA) pero no el poder de corte de la protección: no se puede comprobar que corte esa corriente de cortocircuito.`);
-    avisosGlobales.push(`Cortocircuito: no se ha verificado la solicitación térmica del cable (I²t ≤ k²S² con el tiempo de disparo de la protección) ni el disparo magnético al final de la línea (ITC-BT-22). Compruébalo con los datos del fabricante.`);
-  }
-  // Corriente con la que se dimensiona el cable (Iz mínima exigida).
-  //  - Magnetotérmico: In. Fusible gG: In·1,6/1,45 (I2 ≤ 1,45·Iz).
-  //  - Máquina con motores (ITC-BT-47): al menos 1,25 × la intensidad de planos al 100 %.
-  let ibRefCable = breakerGeneral;
-  if(planos){
-    if(infoPlanos.tipoProt==='fusible') ibRefCable = breakerGeneral*1.6/1.45;
-    if(infoPlanos.motor) ibRefCable = Math.max(ibRefCable, 1.25*infoPlanos.ibNominal);
-  }
-  document.getElementById('resBreakerGeneral').textContent = breakerGeneral+" A";
-  if(planos){
+    document.getElementById('cascadaGeneral').innerHTML = cascadaAcometidaPlanos(resAc, entAcom);
+  }else{
     document.getElementById('resBreakerGeneralSub').innerHTML =
-      `Protección instalada según cuadro (${infoPlanos.sinTermico?'seccionador':(infoPlanos.tipoProt==='fusible'?'fusible gG':'térmico')})${infoPlanos.curva?`, curva ${infoPlanos.curva}`:''}${infoPlanos.pdc?`, ${infoPlanos.pdc} kA`:''}<br>`+
-      `Ib de planos ≈ <strong>${ibGeneral.toFixed(1)} A</strong> (${infoPlanos.valor} ${infoPlanos.unidad}${infoPlanos.unidad==='A'?'':` a ${Vacom} V ${trifAcom?'trif.':'mono.'}, cos φ ${cosfGeneral}`}${infoPlanos.simult<100?`, uso ${infoPlanos.simult}%`:''}) · calibre mínimo normalizado: ${infoPlanos.minTxt} A`;
-  }else
-  document.getElementById('resBreakerGeneralSub').innerHTML =
-    `Ib general de diseño ≈ <strong>${ibGeneral.toFixed(1)} A</strong> a 400V trif., cos φ ${cosfGeneral}<br>`+
-    `= Σ cargas reales (circuitos + 24VDC): ${(potenciaBaseW/1000).toFixed(2)} kW`+
-    (extraArranqueW>0 ? ` + 25% del motor mayor (${esc(nombreMotorMayor)}, ${ibMotorMayor.toFixed(1)} A): +${(extraArranqueW/1000).toFixed(2)} kW` : ` (margen de arranque desactivado o sin motores)`)+
-    ` = ${(potenciaGeneralElectricaW/1000).toFixed(2)} kW`;
-
-  const rcdGeneral = pickRCD(breakerGeneral);
-  if(breakerGeneral > RCD_RATINGS[RCD_RATINGS.length-1]) avisosGlobales.push(`No hay diferencial normalizado de ${breakerGeneral} A o más (el mayor contemplado es ${RCD_RATINGS[RCD_RATINGS.length-1]} A): usa un relé diferencial con transformador toroidal.`);
-  if(!planos && ibGeneral > BREAKERS_GENERAL[BREAKERS_GENERAL.length-1]) avisosGlobales.push(`La Ib general (${ibGeneral.toFixed(0)} A) supera el mayor calibre contemplado (${BREAKERS_GENERAL[BREAKERS_GENERAL.length-1]} A): reparte la alimentación en varias líneas.`);
-  if(planos){
-    const ip = infoPlanos;
+      `Ib general de diseño ≈ <strong>${ibGeneral.toFixed(1)} A</strong> a 400V trif., cos φ ${cosfGeneral}<br>`+
+      `= Σ cargas reales (circuitos + 24VDC): ${(potenciaBaseW/1000).toFixed(2)} kW`+
+      (extraArranqueW>0 ? ` + 25% del motor mayor (${esc(nombreMotorMayor)}, ${ibMotorMayor.toFixed(1)} A): +${(extraArranqueW/1000).toFixed(2)} kW` : ` (margen de arranque desactivado o sin motores)`)+
+      ` = ${(potenciaGeneralElectricaW/1000).toFixed(2)} kW`;
     document.getElementById('cascadaGeneral').innerHTML = `
-    <div class="step"><span class="step-num">1</span><span>Potencia según planos: <strong>${ip.valor} ${ip.unidad}</strong>${ip.unidad==='A'?'':` a ${ip.Vacom} V ${ip.trifAcom?'trifásico':'monofásico'}${ip.unidad==='kW'?`, cos φ ${cosfGeneral}`:''}`} → ${ip.ibNominal.toFixed(1)} A</span></div>
-    <div class="step"><span class="step-num">2</span><span>Uso/simultaneidad de la máquina ${ip.simult}% → <strong>Ib = ${ibGeneral.toFixed(1)} A</strong></span></div>
-    <div class="step"><span class="step-num">3</span><span>Protección instalada: ${ip.secc!==null?`seccionador ${ip.secc} A`:'sin seccionador indicado'} · ${ip.term!==null?`térmico ${ip.term} A`:'sin térmico indicado'}${ip.curva?` · curva ${ip.curva}`:''}${ip.pdc?` · PdC ${ip.pdc} kA`:''}</span></div>
-    <div class="step step-total"><span class="step-num">=</span><span>In = ${breakerGeneral} A (Ib ${ibGeneral.toFixed(1)} A ≤ In) → diferencial ${rcdGeneral} A / ${sensGeneral} mA → cable con Iz ≥ ${breakerGeneral} A y ΔU ≤ ${vdropAcomMax}% (ver tarjeta)</span></div>`;
-  }else
-  document.getElementById('cascadaGeneral').innerHTML = `
     <div class="step"><span class="step-num">1</span><span>Suma de consumo eléctrico real de los ${filas.length} circuitos de potencia: <strong>${(potenciaElectricaW/1000).toFixed(2)} kW</strong></span></div>
     <div class="step"><span class="step-num">2</span><span>+ Consumo de entrada de la fuente 24VDC (control/maniobra): <strong>${(potenciaEntradaFuenteW/1000).toFixed(2)} kW</strong></span></div>
     <div class="step"><span class="step-num">3</span><span>= Base de cargas reales: <strong>${(potenciaBaseW/1000).toFixed(2)} kW</strong> → ${((potenciaBaseW)/(Math.sqrt(3)*400*cosfGeneral)).toFixed(1)} A a 400V trif.</span></div>
     <div class="step"><span class="step-num">4</span><span>${extraArranqueW>0 ? `+ 25% de la Ib del motor mayor (<strong>${esc(nombreMotorMayor) || 'motor mayor'}</strong>, ${ibMotorMayor.toFixed(1)} A): <strong>+${(extraArranqueW/1000).toFixed(2)} kW</strong>` : `Margen de arranque desactivado o sin motores en la lista: sin extra`}</span></div>
     <div class="step step-total"><span class="step-num">=</span><span>Ib general de diseño: ${ibGeneral.toFixed(1)} A → interruptor general ${breakerGeneral} A → diferencial ${rcdGeneral} A / ${sensGeneral} mA → sección acometida (ver tarjeta)</span></div>
   `;
-
-  document.getElementById('resDiferencialGeneral').textContent = rcdGeneral+" A / "+sensGeneral+" mA";
-  document.getElementById('resDiferencialGeneralSub').textContent =
-    `Diferencial general de intensidad nominal ≥ interruptor general, sensibilidad seleccionada ${sensGeneral} mA`;
-
-  const ftempAcom = ftemp; // misma temperatura ambiente
-  const modoEstrictoLGA = document.getElementById('modoEstrictoLGA').checked;
-  let materialAcom = 'cu';
-  let izFactorAcom = 1;
-  // La sección mínima práctica industrial se aplica también a la acometida:
-  // antes solo afectaba a los circuitos, y podía salir una acometida de
-  // 1,5 mm² para el cuadro completo.
-  let minSeccionAcom = minSeccionPotencia;
-  let etiquetaCriterio = "";
-  if(modoEstrictoLGA){
-    const tramo = document.getElementById('tramoTipo').value;
-    materialAcom = document.getElementById('materialAcom').value;
-    izFactorAcom = materialAcom==='cu' ? 1 : 0.78; // reducción aproximada de ampacidad en aluminio
-    if(tramo==='acometida'){ minSeccionAcom = materialAcom==='cu' ? 10 : 16; }
-    else { minSeccionAcom = materialAcom==='cu' ? 10 : 16; } // ITC-BT-14: LGA mínimo 10 mm² Cu / 16 mm² Al
-    etiquetaCriterio = ` · modo estricto ${tramo==='acometida'?'acometida':'LGA'} (${materialAcom==='cu'?'Cu':'Al'}, ρ=${resistividadDe(materialAcom, aisl).toFixed(5)}), mínimo absoluto ${minSeccionAcom} mm²`;
   }
-  // La resistividad ya no se fija a mano: sale del material y del aislamiento
-  // (PVC 70°C / XLPE 90°C), que es lo que determina la temperatura de servicio.
-  //
-  // IMPORTANTE: el cable se dimensiona contra el In del interruptor general, no
-  // contra la Ib. La condición del REBT (ITC-BT-22 / IEC 60364-4-43) es
-  // Ib ≤ In ≤ Iz: quien decide la protección del cable frente a sobrecarga es el
-  // calibre del interruptor, no la corriente de servicio. Antes se dimensionaba
-  // con ibGeneral y el interruptor se elegía después por separado, así que con
-  // la carga justo por encima de un escalón de calibre el cable podía quedar con
-  // Iz < In, es decir, sin protección efectiva.
-  // Agrupamiento de la acometida y, con armónicos y neutro, factor 0,86
-  // (el neutro pasa a ser un conductor cargado, UNE-HD 60364-5-52 anexo E).
-  const fArmonicos = (sistemaAcom==='trif4' && armonicos) ? 0.86 : 1;
-  const fagrupAcom = factorAgrupamiento(agrupAcom)*fArmonicos;
-  const elegidoAcom = calcularSeccionYVd(ibRefCable, {
-    metodo:metodoAcometida, aislamiento:aisl, ftemp:ftempAcom, fagrup:fagrupAcom,
-    V:Vacom, long:distAcometida, trifasico:trifAcom, vdropMax:vdropAcomMax,
-    minSeccion:minSeccionAcom, material:materialAcom, izFactorMaterial:izFactorAcom,
-    cosf:cosfGeneral, ibCaida:ibGeneral
-  });
-  // Verificación explícita de la coordinación cable–protección en el tramo
-  // general. Con el dimensionado contra In debería cumplirse siempre, pero si la
-  // sección topa con el final de la tabla puede no llegar, y entonces hay que
-  // decirlo: un cable con Iz < In no está protegido frente a sobrecarga.
-  if(elegidoAcom.izCorr < ibRefCable){
-    avisosGlobales.push(`Coordinación cable–protección de la acometida: la Iz corregida del cable (${elegidoAcom.izCorr.toFixed(1)} A) es <strong>inferior a la corriente exigida</strong> (${ibRefCable.toFixed(1)} A${ibRefCable>breakerGeneral+0.05?`, mayor que el calibre ${breakerGeneral} A por el criterio de fusible gG o de motor`:''}), por lo que no queda protegido frente a sobrecarga (ITC-BT-22: Ib ≤ In ≤ Iz). Hay que subir sección, mejorar el método de instalación o repartir la alimentación.`);
-  }
-  const neutroAcom = seccionNeutro(elegidoAcom.seccion, materialAcom, sistemaAcom, armonicos);
-  document.getElementById('resSeccionAcometida').textContent = elegidoAcom.seccion+" mm²"+(elegidoAcom.insuficiente?' ⚠':'');
-  document.getElementById('resSeccionAcometidaSub').innerHTML =
-    `Por intensidad: <strong>${elegidoAcom.seccionPorIntensidad} mm²</strong> (Iz ${elegidoAcom.izCorrPorIntensidad.toFixed(1)} A) · `+
-    `Por caída U: <strong>${elegidoAcom.seccionPorCaidaTension} mm²</strong> (${elegidoAcom.vdPorCaidaTension.toFixed(2)}%) · `+
-    `Decisivo: ${elegidoAcom.criterioDecisivo}<br>`+
-    `Con la sección final: Iz corr. ${elegidoAcom.izCorr.toFixed(1)} A · ΔU ${elegidoAcom.vd.toFixed(2)}% (máx. ${vdropAcomMax}%) a ${distAcometida} m${etiquetaCriterio}`+
-    (ibRefCable>breakerGeneral+0.05 ? `<br>Corriente exigida al cable: ${ibRefCable.toFixed(1)} A (${[planos&&infoPlanos.tipoProt==='fusible'?'fusible gG: 1,6·In/1,45':'', planos&&infoPlanos.motor?'motor: 1,25 × Ib de planos (ITC-BT-47)':''].filter(Boolean).join(' · ')})` : '')+
-    `<br>${textoNeutro(neutroAcom)}`;
 
   document.getElementById('resPtotalSub').textContent =
     `Consumo eléctrico real (circuitos): ${(potenciaElectricaW/1000).toFixed(2)} kW`;
@@ -1973,7 +2167,7 @@ function calcular(){
 
   document.getElementById('cardGenDistWrap').style.display = hayDistribuidorOn ? 'block' : 'none';
 
-  let elegidoGenDist = null, neutroGenDist = null;
+  let elegidoGenDist = null, neutroGenDist = null, peGenDist = null;
   if(hayDistribuidorOn){
     const longGenDist = parseFloat(document.getElementById('longGenDist').value);
     // También lo protege el interruptor general: se dimensiona contra su In.
@@ -1983,10 +2177,11 @@ function calcular(){
       cosf:cosfGeneral, material:'cu', ibCaida:ibGeneral
     });
     neutroGenDist = seccionNeutro(elegidoGenDist.seccion, 'cu', sistemaAcom, armonicos);
+    peGenDist = seccionPE(elegidoGenDist.seccion);
     document.getElementById('resCableGenDist').textContent = elegidoGenDist.seccion+" mm²"+(elegidoGenDist.insuficiente?' ⚠':'');
     document.getElementById('resCableGenDistSub').innerHTML =
       `Por intensidad: <strong>${elegidoGenDist.seccionPorIntensidad} mm²</strong> · Por caída U: <strong>${elegidoGenDist.seccionPorCaidaTension} mm²</strong> (decisivo: ${elegidoGenDist.criterioDecisivo})<br>`+
-      `Para ${ibGeneral.toFixed(1)} A (Ib general) a ${longGenDist} m · Iz corr. ${elegidoGenDist.izCorr.toFixed(1)} A · caída ${elegidoGenDist.vd.toFixed(2)}%<br>${textoNeutro(neutroGenDist)}`;
+      `Para ${ibGeneral.toFixed(1)} A (Ib general) a ${longGenDist} m · Iz corr. ${elegidoGenDist.izCorr.toFixed(1)} A · caída ${elegidoGenDist.vd.toFixed(2)}%<br>${textoNeutro(neutroGenDist)} · PE: <strong>${peGenDist.seccion} mm²</strong>`;
   }
 
   const longPorCircuito = hayDistribuidorOn
@@ -2012,6 +2207,7 @@ function calcular(){
       <td data-label="Ib diseño (A)">${c.ibDiseno.toFixed(1)}</td>
       <td data-label="Longitud (m)">${longPorCircuito}</td>
       <td data-label="Sección">${seg.seccion} mm²${seg.insuficiente?' <span class="status-bad">⚠</span>':''}</td>
+      <td data-label="PE (mm²)">${seccionPE(seg.seccion).seccion}</td>
       <td data-label="Iz corr. (A)">${seg.izCorr.toFixed(1)}</td>
       <td data-label="Caída U (%)" class="${seg.vd>vdropMax?'status-bad':'status-ok'}">${seg.vd.toFixed(2)}%</td>
       <td data-label="Decisivo">${seg.criterioDecisivo}</td>
@@ -2133,7 +2329,7 @@ function calcular(){
       rcdGeneral, nombreMotorMayor, ibMotorMayor
     },
     acometida: elegidoAcom,
-    neutroAcom, genDist: elegidoGenDist, neutroGenDist,
+    neutroAcom, peAcom, genDist: elegidoGenDist, neutroGenDist, peGenDist,
     v24: {consumo24Total, consumo24ConMargen, fuenteRecomendada, corrienteFuente,
           iinFuente, protFuente, elegidoInt24, perdidasFuente},
     termico: {calorCircuitosW, calorTotalW, Ae, deltaT, disipNatural,
@@ -2236,11 +2432,12 @@ function construirInforme(){
 
   html.push(sec('Circuitos de potencia — resultado del cálculo'));
   html.push(tabla(
-    ['Circuito','Ib (A)','Ib diseño (A)','S int. (mm²)','S ΔU (mm²)','<strong>S final (mm²)</strong>','Decisivo','Iz corr. (A)','ΔU (%)','Magnet.','Curva','Guardamotor'],
+    ['Circuito','Ib (A)','Ib diseño (A)','S int. (mm²)','S ΔU (mm²)','<strong>S final (mm²)</strong>','PE (mm²)','Decisivo','Iz corr. (A)','ΔU (%)','Magnet.','Curva','Guardamotor'],
     c.circuitos.map(x=>[
       esc(x.nombre), f(x.ib,1), f(x.ibDiseno,1),
       x.elegido.seccionPorIntensidad, x.elegido.seccionPorCaidaTension,
       `<strong>${x.elegido.seccion}</strong>${x.elegido.insuficiente?' ⚠':''}`,
+      seccionPE(x.elegido.seccion).seccion,
       x.elegido.criterioDecisivo,
       f(x.elegido.izCorr,1), f(x.elegido.vd,2),
       `${x.breaker.valor} A${x.breaker.ok?'':' ⚠'}`, x.curva,
@@ -2286,6 +2483,7 @@ function construirInforme(){
   html.push(pares([
     ['Sistema de alimentación', {trif3:'Trifásico 400 V, 3F (sin neutro)', trif4:'Trifásico 400 V + neutro (3F+N)', mono:'Monofásico 230 V (F+N)'}[e.sistemaAcom]],
     ['Neutro de la acometida', c.neutroAcom ? `<strong>${c.neutroAcom.seccion} mm²</strong> — ${c.neutroAcom.motivo}` : 'Sin conductor neutro'],
+    ['Conductor de protección (PE) de la acometida', `<strong>${c.peAcom.seccion} mm²</strong> — ${c.peAcom.motivo}`],
     ['Circuitos agrupados en la acometida', `${e.agrupAcom} (factor ${f(factorAgrupamiento(e.agrupAcom),2)})`],
     e.armonicos ? ['Cargas con armónicos', 'Sí — neutro como conductor cargado (factor 0,86 en 3F+N) y neutro igual a la fase'] : null,
     ['Corriente exigida al cable (Iz mínima)', `${f(e.ibRefCable,1)} A`]
@@ -2296,14 +2494,16 @@ function construirInforme(){
   if(c.genDist){
     html.push(pares([
       ['Cable interruptor general → distribuidor', `<strong>${c.genDist.seccion} mm²</strong> — Iz corr. ${f(c.genDist.izCorr,1)} A, ΔU ${f(c.genDist.vd,2)}%`],
-      ['Neutro del tramo', c.neutroGenDist ? `${c.neutroGenDist.seccion} mm²` : 'Sin conductor neutro']
+      ['Neutro del tramo', c.neutroGenDist ? `${c.neutroGenDist.seccion} mm²` : 'Sin conductor neutro'],
+      ['PE del tramo', `${c.peGenDist.seccion} mm²`]
     ]));
   }
   html.push(tabla(
-    ['Circuito','Ib diseño (A)','S por intensidad','S por ΔU','<strong>S final (mm²)</strong>','Iz corr. (A)','ΔU (%)','Decisivo'],
+    ['Circuito','Ib diseño (A)','S por intensidad','S por ΔU','<strong>S final (mm²)</strong>','PE (mm²)','Iz corr. (A)','ΔU (%)','Decisivo'],
     c.interiores.map(x=>[
       esc(x.nombre), f(x.ibDiseno,1), x.seg.seccionPorIntensidad, x.seg.seccionPorCaidaTension,
       `<strong>${x.seg.seccion}</strong>${x.seg.insuficiente?' ⚠':''}`,
+      seccionPE(x.seg.seccion).seccion,
       f(x.seg.izCorr,1), f(x.seg.vd,2), x.seg.criterioDecisivo
     ])
   ));
@@ -2354,7 +2554,7 @@ function construirInforme(){
     <li>Factores de corrección por temperatura y por agrupamiento: la ITC-BT-19 remite a la <strong>UNE 20.460-5-523</strong>; se aplican los valores de esa norma, con los de agrupamiento en tubo o canaleta (caso más restrictivo) también para los métodos al aire.</li>
     <li>Desde el 4 de abril de 2025 la ITC-BT-02 remite a <strong>UNE-HD 60364-5-52:2022 + A12:2023</strong> (Resolución de 20 de marzo de 2025, BOE-A-2025-6773; fin del periodo de coexistencia el 1 de octubre de 2025). Esa norma no es de acceso libre; este cálculo usa la Tabla 1 impresa en el REBT ${e.margenIz===1 ? 'sin margen añadido' : `con un margen propio de ${String(e.margenIz).replace('.',',')}`}.</li>
     <li>El cálculo de caída de tensión es <strong>resistivo</strong>: desprecia la reactancia del conductor, aproximación admitida hasta unos 120 mm².</li>
-    <li><strong>No se comprueban</strong>: la resistencia térmica al cortocircuito de los conductores (I²t ≤ k²S², ITC-BT-22), la selectividad entre protecciones, la sección del conductor de protección (PE), ni la puesta a tierra (ITC-BT-18). El neutro se dimensiona solo en la acometida y en el tramo interruptor general → distribuidor.</li>
+    <li><strong>No se comprueban</strong>: la resistencia térmica al cortocircuito de los conductores (I²t ≤ k²S², ITC-BT-22), la selectividad entre protecciones ni la puesta a tierra (ITC-BT-18). El neutro se dimensiona en la acometida y en el tramo interruptor general → distribuidor (tabla 1 de la ITC-BT-14); el conductor de protección (PE) en todos los cables, según la tabla 2 de la ITC-BT-19.</li>
     <li>Documento de apoyo al predimensionado. <strong>No sustituye a un proyecto firmado por técnico competente.</strong></li>
   </ul>`);
 
