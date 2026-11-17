@@ -1111,7 +1111,7 @@ function calcularMotorIndependiente(){
 function avisosDeSeccion(elegido, breaker, metodo, aisl){
   const av = [];
   if(elegido.sinTabla) av.push(`El método <strong>${metodo}</strong> no tiene ninguna sección tabulada en la Tabla 1 de la ITC-BT-19 para aislamiento ${aisl} con ${elegido.nCargados} conductores con carga. Elige otro método o cambia el aislamiento.`);
-  if(elegido.forzadaPorTabla) av.push(`La sección no la ha decidido la carga: la Tabla 1 de la ITC-BT-19 <strong>no tabula el método ${metodo}</strong> con aislamiento ${aisl} y ${elegido.nCargados} conductores con carga por debajo de ${elegido.seccionPorIntensidad} mm² (nota 1 de la tabla: "a partir de 25 mm²"). Se han descartado ${elegido.seccionesNoTabuladas.join(', ')} mm². Si necesitas una sección menor, este método de instalación no es el adecuado.`);
+  if(elegido.forzadaPorTabla) av.push(`La sección no la ha decidido la carga: la Tabla 1 de la ITC-BT-19 <strong>no tabula el método ${metodo}</strong> con aislamiento ${aisl} y ${elegido.nCargados} conductores con carga por debajo de ${elegido.primeraTabulada} mm² (nota 1 de la tabla: "a partir de 25 mm²"). Se han descartado ${elegido.seccionesNoTabuladas.join(', ')} mm². Si necesitas una sección menor, este método de instalación no es el adecuado.`);
   if(elegido.topeTabla) av.push(`La sección resultante supera la mayor sección que la Tabla 1 tabula para el método <strong>${metodo}</strong>. Se ha conservado la Iz de la última sección tabulada (no se concede capacidad extra por el cobre añadido). Revisa si ese método de instalación es realista para esta sección.`);
   if(elegido.insuficiente) av.push(`Ni con 300 mm² se cumplen los dos criterios. Hay que <strong>repartir la carga en varios circuitos</strong>, acortar el tramo o usar conductores en paralelo.`);
   if(breaker && !breaker.ok) av.push(`Magnetotérmico: ${breaker.motivo}.`);
@@ -1496,13 +1496,17 @@ function seccionPorIntensidad(ib, o){
   // 25 mm²). Si acabamos subiendo de sección por este motivo hay que decirlo,
   // porque si no parece que la calculadora se haya inventado el resultado.
   const saltadasPorTabla = [];
+  let primeraTabulada = null;
   for(const s of SECCIONES){
     if(s < minSeccion) continue;
     const base = izSafe(o.metodo, s, o.aislamiento, o.nCargados);
     if(!base.disponible){ saltadasPorTabla.push(s); continue; }
     const izCorr = base.valor*fMat*o.ftemp*o.fagrup;
-    ultima = {seccion:s, izCorr:izCorr, topeTabla:base.topeTabla,
-              forzadaPorTabla: saltadasPorTabla.length>0, saltadas:saltadasPorTabla.slice()};
+    if(primeraTabulada === null) primeraTabulada = s;
+    // Solo se avisa de «forzada por la tabla» si la sección elegida es la primera
+    // tabulada: si la carga exige más, la sección la decide la carga, no la tabla.
+    ultima = {seccion:s, izCorr:izCorr, topeTabla:base.topeTabla, primeraTabulada,
+              forzadaPorTabla: saltadasPorTabla.length>0 && s===primeraTabulada, saltadas:saltadasPorTabla.slice()};
     if(izCorr >= ib) return ultima;
   }
   if(ultima) return {...ultima, insuficiente:true};
@@ -1579,6 +1583,7 @@ function calcularSeccionYVd(ib, opts){
     topeTabla: !!(porInt.topeTabla || baseFinal.topeTabla),
     sinTabla: !!porInt.sinTabla,
     forzadaPorTabla: !!porInt.forzadaPorTabla,
+    primeraTabulada: porInt.primeraTabulada,
     seccionesNoTabuladas: porInt.saltadas || [],
     reactanciaRelevante: seccionFinal > 120,
     aislamiento: o.aislamiento,
